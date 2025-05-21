@@ -93,7 +93,7 @@ Legend  ✅ Done 🛠 WIP ⬜ Planned
 
 ## 🔒 License
 
-MIT © 2025 Ruben Santos Garcia – see [LICENSE](./LICENSE).
+MIT © 2025 Ruben Santos Garcia – see [LICENSE](./LICENSE.md).
 
 ## 🧠 Inspiration
 
