@@ -1,0 +1,10 @@
+[package]
+name = "valeris"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0.98"
+bollard = "0.18.1"
+clap = { version = "4.5.37", features = ["derive"] }
+tokio = { version = "1.44.2", features = ["full"] }
