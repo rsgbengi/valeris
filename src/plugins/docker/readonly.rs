@@ -39,3 +39,70 @@ impl ValerisPlugin for ReadOnlyRootFSPlugin {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::docker::model::{RiskLevel};
+    use bollard::models::{ContainerInspectResponse, HostConfig};
+
+    #[test]
+    fn detects_readonly_rootfs_enabled() {
+        let host_config = HostConfig {
+            readonly_rootfs: Some(true),
+            ..Default::default()
+        };
+
+        let container = ContainerInspectResponse {
+            host_config: Some(host_config),
+            ..Default::default()
+        };
+
+        let input = ScanInput::DockerContainer(container);
+        let plugin = ReadOnlyRootFSPlugin;
+        let findings = plugin.run(&input);
+
+        assert_eq!(findings.len(), 1);
+        assert_eq!(findings[0].risk, RiskLevel::Informative);
+        assert!(findings[0].description.contains("read-only mode"));
+    }
+
+    #[test]
+    fn ignores_readonly_rootfs_disabled() {
+        let host_config = HostConfig {
+            readonly_rootfs: Some(false),
+            ..Default::default()
+        };
+
+        let container = ContainerInspectResponse {
+            host_config: Some(host_config),
+            ..Default::default()
+        };
+
+        let input = ScanInput::DockerContainer(container);
+        let plugin = ReadOnlyRootFSPlugin;
+        let findings = plugin.run(&input);
+
+        assert!(findings.is_empty());
+    }
+
+    #[test]
+    fn ignores_missing_readonly_rootfs_field() {
+        let host_config = HostConfig {
+            readonly_rootfs: None,
+            ..Default::default()
+        };
+
+        let container = ContainerInspectResponse {
+            host_config: Some(host_config),
+            ..Default::default()
+        };
+
+        let input = ScanInput::DockerContainer(container);
+        let plugin = ReadOnlyRootFSPlugin;
+        let findings = plugin.run(&input);
+
+        assert!(findings.is_empty());
+    }
+}
+

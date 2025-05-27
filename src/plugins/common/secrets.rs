@@ -69,3 +69,85 @@ impl ValerisPlugin for SecretsPlugin {
         findings
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::docker::model::{RiskLevel};
+    use bollard::models::{ContainerInspectResponse, ContainerConfig};
+
+    fn make_container_with_env(envs: Vec<&str>) -> ContainerInspectResponse {
+        let config = ContainerConfig {
+            env: Some(envs.into_iter().map(|s| s.to_string()).collect()),
+            ..Default::default()
+        };
+
+        ContainerInspectResponse {
+            config: Some(config),
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn detects_sensitive_env_vars() {
+        let container = make_container_with_env(vec![
+            "PASSWORD=supersecret",
+            "DB_PASS=123456",
+            "USER=admin",
+        ]);
+
+        let plugin = SecretsPlugin;
+        let findings = plugin.run(&ScanInput::DockerContainer(container));
+
+        assert_eq!(findings.len(), 2);
+        assert!(findings.iter().any(|f| f.description.contains("PASSWORD = supersecret")));
+        assert!(findings.iter().any(|f| f.description.contains("DB_PASS = 123456")));
+        assert!(findings.iter().all(|f| f.risk == RiskLevel::High));
+    }
+
+    #[test]
+    fn ignores_non_sensitive_env_vars() {
+        let container = make_container_with_env(vec![
+            "NODE_ENV=production",
+            "USER=admin",
+            "VERSION=1.0.0",
+        ]);
+
+        let plugin = SecretsPlugin;
+        let findings = plugin.run(&ScanInput::DockerContainer(container));
+
+        assert!(findings.is_empty());
+    }
+
+    #[test]
+    fn handles_missing_env_list() {
+        let config = ContainerConfig {
+            env: None,
+            ..Default::default()
+        };
+
+        let container = ContainerInspectResponse {
+            config: Some(config),
+            ..Default::default()
+        };
+
+        let plugin = SecretsPlugin;
+        let findings = plugin.run(&ScanInput::DockerContainer(container));
+
+        assert!(findings.is_empty());
+    }
+
+    #[test]
+    fn ignores_malformed_env_vars() {
+        let container = make_container_with_env(vec![
+            "INVALID_ENV_FORMAT",
+            "ALSO_BAD"
+        ]);
+
+        let plugin = SecretsPlugin;
+        let findings = plugin.run(&ScanInput::DockerContainer(container));
+
+        assert!(findings.is_empty());
+    }
+}
+

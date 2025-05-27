@@ -5,7 +5,7 @@ pub struct Finding {
     pub risk: RiskLevel,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum RiskLevel {
     Informative,
     Low,

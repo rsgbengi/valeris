@@ -40,3 +40,53 @@ impl ValerisPlugin for PidModePlugin {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::docker::model::{RiskLevel};
+    use bollard::models::{ContainerInspectResponse, HostConfig};
+
+    #[test]
+    fn detects_host_pid_mode() {
+        // Simula un contenedor con pid_mode = "host"
+        let host_config = HostConfig {
+            pid_mode: Some("host".to_string()),
+            ..Default::default()
+        };
+
+        let container = ContainerInspectResponse {
+            host_config: Some(host_config),
+            ..Default::default()
+        };
+
+        let input = ScanInput::DockerContainer(container);
+        let plugin = PidModePlugin;
+        let findings = plugin.run(&input);
+
+        assert_eq!(findings.len(), 1);
+        assert_eq!(findings[0].risk, RiskLevel::Informative);
+        assert!(findings[0].description.contains("host PID mode"));
+    }
+
+    #[test]
+    fn ignores_non_host_pid_mode() {
+        // Simula un contenedor con pid_mode distinto
+        let host_config = HostConfig {
+            pid_mode: Some("private".to_string()),
+            ..Default::default()
+        };
+
+        let container = ContainerInspectResponse {
+            host_config: Some(host_config),
+            ..Default::default()
+        };
+
+        let input = ScanInput::DockerContainer(container);
+        let plugin = PidModePlugin;
+        let findings = plugin.run(&input);
+
+        assert!(findings.is_empty());
+    }
+}
+

@@ -49,3 +49,41 @@ impl ValerisPlugin for MountPlugin {
         findings
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::docker::model::{RiskLevel};
+    use bollard::models::{ContainerInspectResponse, MountPoint};
+
+    #[test]
+    fn detects_sensitive_mounts() {
+        let mounts = vec![
+            MountPoint {
+                source: Some("/var/run/docker.sock".to_string()),
+                destination: Some("/sock".to_string()),
+                ..Default::default()
+            },
+            MountPoint {
+                source: Some("/data".to_string()),
+                destination: Some("/app/data".to_string()),
+                ..Default::default()
+            },
+        ];
+
+        let container = ContainerInspectResponse {
+            mounts: Some(mounts),
+            ..Default::default()
+        };
+
+        let input = ScanInput::DockerContainer(container);
+        let plugin = MountPlugin;
+        let findings = plugin.run(&input);
+
+        assert_eq!(findings.len(), 2);
+
+        assert!(findings.iter().any(|f| f.risk == RiskLevel::High && f.description.contains("/var/run/docker.sock")));
+        assert!(findings.iter().any(|f| f.risk == RiskLevel::Informative && f.description.contains("/data")));
+    }
+}
+

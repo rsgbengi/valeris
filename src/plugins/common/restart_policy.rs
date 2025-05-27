@@ -66,3 +66,84 @@ impl ValerisPlugin for RestartPolicyPlugin {
         }]
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::docker::model::{RiskLevel};
+    use bollard::models::{ContainerInspectResponse, HostConfig, RestartPolicy};
+    use bollard::secret::RestartPolicyNameEnum;
+
+    fn make_container_with_policy(policy: Option<RestartPolicyNameEnum>) -> ContainerInspectResponse {
+        let restart_policy = RestartPolicy {
+            name: policy,
+            ..Default::default()
+        };
+
+        let host_config = HostConfig {
+            restart_policy: Some(restart_policy),
+            ..Default::default()
+        };
+
+        ContainerInspectResponse {
+            host_config: Some(host_config),
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn detects_always_restart_policy() {
+        let container = make_container_with_policy(Some(RestartPolicyNameEnum::ALWAYS));
+        let plugin = RestartPolicyPlugin;
+        let findings = plugin.run(&ScanInput::DockerContainer(container));
+
+        assert_eq!(findings.len(), 1);
+        assert_eq!(findings[0].risk, RiskLevel::Low);
+        assert!(findings[0].description.contains("always"));
+    }
+
+    #[test]
+    fn detects_on_failure_restart_policy() {
+        let container = make_container_with_policy(Some(RestartPolicyNameEnum::ON_FAILURE));
+        let plugin = RestartPolicyPlugin;
+        let findings = plugin.run(&ScanInput::DockerContainer(container));
+
+        assert_eq!(findings.len(), 1);
+        assert_eq!(findings[0].risk, RiskLevel::Informative);
+        assert!(findings[0].description.contains("on-failure"));
+    }
+
+    #[test]
+    fn detects_unless_stopped_restart_policy() {
+        let container = make_container_with_policy(Some(RestartPolicyNameEnum::UNLESS_STOPPED));
+        let plugin = RestartPolicyPlugin;
+        let findings = plugin.run(&ScanInput::DockerContainer(container));
+
+        assert_eq!(findings.len(), 1);
+        assert_eq!(findings[0].risk, RiskLevel::Informative);
+        assert!(findings[0].description.contains("unless-stopped"));
+    }
+
+    #[test]
+    fn detects_no_restart_policy() {
+        let container = make_container_with_policy(Some(RestartPolicyNameEnum::NO));
+        let plugin = RestartPolicyPlugin;
+        let findings = plugin.run(&ScanInput::DockerContainer(container));
+
+        assert_eq!(findings.len(), 1);
+        assert_eq!(findings[0].risk, RiskLevel::Informative);
+        assert!(findings[0].description.contains("no"));
+    }
+
+    #[test]
+    fn detects_missing_restart_policy() {
+        let container = make_container_with_policy(None);
+        let plugin = RestartPolicyPlugin;
+        let findings = plugin.run(&ScanInput::DockerContainer(container));
+
+        assert_eq!(findings.len(), 1);
+        assert_eq!(findings[0].risk, RiskLevel::Medium);
+        assert!(findings[0].description.contains("No restart policy defined"));
+    }
+}
+

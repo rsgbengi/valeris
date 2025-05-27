@@ -65,3 +65,36 @@ impl ValerisPlugin for CapabilitiesPlugin {
         findings
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::docker::model::{RiskLevel};
+    use bollard::models::{ContainerInspectResponse, HostConfig};
+
+    #[test]
+    fn detects_dangerous_capabilities() {
+        let host_config = HostConfig {
+            cap_add: Some(vec![
+                "SYS_ADMIN".to_string(),
+                "CHOWN".to_string(),
+                "FOO".to_string(),
+            ]),
+            ..Default::default()
+        };
+
+        let container = ContainerInspectResponse {
+            host_config: Some(host_config),
+            ..Default::default()
+        };
+
+        let input = ScanInput::DockerContainer(container);
+        let plugin = CapabilitiesPlugin;
+        let findings = plugin.run(&input);
+
+        assert_eq!(findings.len(), 3);
+        assert!(findings.iter().any(|f| f.risk == RiskLevel::High && f.description.contains("SYS_ADMIN")));
+        assert!(findings.iter().any(|f| f.risk == RiskLevel::Medium && f.description.contains("CHOWN")));
+        assert!(findings.iter().any(|f| f.risk == RiskLevel::Low && f.description.contains("FOO")));
+    }
+}

@@ -1,6 +1,5 @@
-use super::ValerisPlugin;
+use super::super::{PluginTarget, ScanInput, ValerisPlugin};
 use crate::docker::model::{Finding, RiskLevel};
-use crate::plugins::{PluginTarget, ScanInput};
 use std::collections::HashSet;
 
 pub struct PortPlugin;
@@ -71,5 +70,44 @@ impl ValerisPlugin for PortPlugin {
         }
 
         findings
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::plugins::ScanInput;
+    use bollard::models::{ContainerInspectResponse, NetworkSettings, PortBinding};
+    use std::collections::HashMap;
+
+    fn mock_container_with_exposed_port() -> ContainerInspectResponse {
+        let mut bindings = HashMap::new();
+        bindings.insert(
+            "80/tcp".to_string(),
+            Some(vec![PortBinding {
+                host_ip: Some("0.0.0.0".to_string()),
+                host_port: Some("8080".to_string()),
+            }]),
+        );
+
+        let network_settings = NetworkSettings {
+            ports: Some(bindings),
+            ..Default::default()
+        };
+
+        ContainerInspectResponse {
+            network_settings: Some(network_settings),
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn detects_exposed_ports() {
+        let plugin = PortPlugin;
+        let input = ScanInput::DockerContainer(mock_container_with_exposed_port());
+        let findings = plugin.run(&input);
+
+        assert!(!findings.is_empty());
+        assert!(findings.iter().any(|f| f.risk == RiskLevel::High));
     }
 }

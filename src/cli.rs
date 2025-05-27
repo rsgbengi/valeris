@@ -7,7 +7,7 @@ pub struct Cli {
     pub command: Commands,
 }
 
-#[derive(ValueEnum, Clone, Debug)]
+#[derive(ValueEnum, Clone, Debug, PartialEq, Eq)]
 pub enum ScanTarget {
     Docker,
     K8s,

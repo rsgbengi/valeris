@@ -40,3 +40,70 @@ impl ValerisPlugin for PrivilegedPlugin {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::docker::model::{RiskLevel};
+    use bollard::models::{ContainerInspectResponse, HostConfig};
+
+    #[test]
+    fn detects_privileged_mode() {
+        let host_config = HostConfig {
+            privileged: Some(true),
+            ..Default::default()
+        };
+
+        let container = ContainerInspectResponse {
+            host_config: Some(host_config),
+            ..Default::default()
+        };
+
+        let input = ScanInput::DockerContainer(container);
+        let plugin = PrivilegedPlugin;
+        let findings = plugin.run(&input);
+
+        assert_eq!(findings.len(), 1);
+        assert_eq!(findings[0].risk, RiskLevel::High);
+        assert!(findings[0].description.contains("privileged mode"));
+    }
+
+    #[test]
+    fn ignores_non_privileged_mode() {
+        let host_config = HostConfig {
+            privileged: Some(false),
+            ..Default::default()
+        };
+
+        let container = ContainerInspectResponse {
+            host_config: Some(host_config),
+            ..Default::default()
+        };
+
+        let input = ScanInput::DockerContainer(container);
+        let plugin = PrivilegedPlugin;
+        let findings = plugin.run(&input);
+
+        assert!(findings.is_empty());
+    }
+
+    #[test]
+    fn ignores_missing_privileged_field() {
+        let host_config = HostConfig {
+            privileged: None,
+            ..Default::default()
+        };
+
+        let container = ContainerInspectResponse {
+            host_config: Some(host_config),
+            ..Default::default()
+        };
+
+        let input = ScanInput::DockerContainer(container);
+        let plugin = PrivilegedPlugin;
+        let findings = plugin.run(&input);
+
+        assert!(findings.is_empty());
+    }
+}
+
