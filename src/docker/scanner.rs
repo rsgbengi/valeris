@@ -75,8 +75,8 @@ pub async fn scan_with_plugins_on_containers(
             .filter(|p| matches!(p.target(), PluginTarget::Docker | PluginTarget::Both))
             .filter(|p| {
                 let id = p.id().to_lowercase();
-                only_set.as_ref().map_or(true, |s| s.contains(&id))
-                    && exclude_set.as_ref().map_or(true, |s| !s.contains(&id))
+                only_set.as_ref().is_none_or(|s| s.contains(&id))
+                    && exclude_set.as_ref().is_none_or(|s| !s.contains(&id))
             })
             .flat_map(|p| p.run(&input))
             .collect();

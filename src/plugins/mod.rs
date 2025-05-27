@@ -16,6 +16,7 @@ pub enum ScanInput {
     DockerContainer(ContainerInspectResponse),
 }
 
+#[allow(dead_code)]
 pub trait ValerisPlugin {
     fn id(&self) -> &str;
     fn name(&self) -> &str;

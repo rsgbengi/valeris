@@ -26,8 +26,7 @@ impl ValerisPlugin for PidModePlugin {
         let pid_mode = container
             .host_config
             .as_ref()
-            .and_then(|hc| hc.pid_mode.as_deref())
-            .map_or(false, |pm| pm == "host");
+            .and_then(|hc| hc.pid_mode.as_deref()) == Some("host");
 
         if pid_mode {
             vec![Finding {

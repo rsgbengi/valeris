@@ -26,8 +26,7 @@ impl ValerisPlugin for NetworkPlugin {
         let is_host_network = container
             .host_config
             .as_ref()
-            .and_then(|hc| hc.network_mode.as_deref())
-            .map_or(false, |nm| nm == "host");
+            .and_then(|hc| hc.network_mode.as_deref()) == Some("host");
 
         if is_host_network {
             vec![Finding {
