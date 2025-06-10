@@ -6,9 +6,10 @@ mod plugins;
 use crate::plugins::PluginTarget;
 use clap::Parser;
 use cli::{Cli, Commands, ScanTarget};
+use docker::exporters::export_findings_grouped;
 use docker::scanner::scan_docker_with_plugins;
 use plugins::load_plugins_for_target;
-
+use docker::printer::print_container_report;
 
 pub fn list_plugins(filter_target: PluginTarget) {
     let plugins = load_plugins_for_target(filter_target);
@@ -34,15 +35,30 @@ where
     let cli = Cli::parse_from(args);
 
     match cli.command {
-        Commands::Scan { target, only, exclude } => {
+        Commands::Scan {
+            target,
+            only,
+            exclude,
+            format,
+            output,
+        } => {
             let target = match target {
                 ScanTarget::Docker => PluginTarget::Docker,
                 ScanTarget::K8s => PluginTarget::Kubernetes,
                 ScanTarget::Both => PluginTarget::Both,
             };
 
-            scan_docker_with_plugins(target, only, exclude).await?;
+            let results = scan_docker_with_plugins(target, only, exclude).await?;
+
+            if output.is_some() {
+                export_findings_grouped(&results, &format, &output);
+            } else {
+                for result in results {
+                    print_container_report(&result.container, &result.findings);
+                }
+            }
         }
+
         Commands::ListPlugins { target } => {
             let plugin_target = match target {
                 Some(ScanTarget::Docker) => PluginTarget::Docker,

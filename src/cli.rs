@@ -13,6 +13,11 @@ pub enum ScanTarget {
     K8s,
     Both,
 }
+#[derive(ValueEnum, Clone, Debug, PartialEq, Eq)]
+pub enum OutputFormat {
+    Json,
+    Csv,
+}
 
 #[derive(Subcommand)]
 pub enum Commands {
@@ -37,6 +42,20 @@ pub enum Commands {
             help = "Exclude the specified plugin(s), comma-separated (e.g. --exclude privileged_mode,readonly_rootfs)"
         )]
         exclude: Option<String>,
+        #[arg(
+            long,
+            value_enum,
+            default_value = "json",
+            requires = "output",
+            help = "Format of the output: json or csv"
+        )]
+        format: OutputFormat,
+
+        #[arg(
+            long,
+            help = "Write output to a file instead of stdout (e.g. --output findings.json)"
+        )]
+        output: Option<String>,
     },
 
     #[command(about = "List all available plugins")]
