@@ -16,7 +16,7 @@
 3. **Native speed** – single 6‑8 MB binary, async inspection with Tokio & Bollard.  
 4. **Learning in public** – every commit and blog post shows the Rust concepts involved.
 
-Follow the behind‑the‑scenes series here → <https://www.kayssel.com>
+Follow the behind‑the‑scenes series here → <https://www.kayssel.com/series/docker-security/>
 
 ## ✨ Features
 
@@ -37,9 +37,9 @@ Planned → JSON/CSV reports · TUI dashboard · Kubernetes support · Signed pl
 > • Linux or macOS<sup>†</sup>
 
 ```bash
-cargo install --git https://github.com/youruser/valeris.git --locked
+cargo install --git https://github.com/rsgbengi/valeris.git --locked
 # or build locally
-git clone https://github.com/youruser/valeris.git && cd valeris
+git clone https://github.com/rsgbengi/valeris.git && cd valeris
 cargo build --release
 sudo mv target/release/valeris /usr/local/bin
 ```

@@ -18,13 +18,13 @@ pub struct ExportableContainerResult {
     pub findings: Vec<ExportableFinding>,
 }
 
-
 fn get_id(container: &ContainerInspectResponse) -> String {
     container.id.clone().unwrap_or_default()
 }
 
 fn get_name(container: &ContainerInspectResponse) -> String {
-    container.name
+    container
+        .name
         .clone()
         .unwrap_or_default()
         .trim_start_matches('/')
@@ -38,11 +38,15 @@ fn to_exportable_json(results: &[ContainerResult]) -> Vec<ExportableContainerRes
             let id = get_id(&r.container);
             let name = get_name(&r.container);
 
-            let findings = r.findings.iter().map(|f| ExportableFinding {
-                kind: f.kind.clone(),
-                description: f.description.clone(),
-                risk: f.risk.clone(),
-            }).collect();
+            let findings = r
+                .findings
+                .iter()
+                .map(|f| ExportableFinding {
+                    kind: f.kind.clone(),
+                    description: f.description.clone(),
+                    risk: f.risk.clone(),
+                })
+                .collect();
 
             ExportableContainerResult {
                 container_id: id,
@@ -57,7 +61,6 @@ fn to_exportable_csv(results: &[ContainerResult]) -> Vec<ExportableFinding> {
     results
         .iter()
         .flat_map(|r| {
-
             r.findings.iter().map(move |f| ExportableFinding {
                 kind: f.kind.clone(),
                 description: f.description.clone(),
@@ -66,9 +69,6 @@ fn to_exportable_csv(results: &[ContainerResult]) -> Vec<ExportableFinding> {
         })
         .collect()
 }
-
-
-
 
 pub fn export_findings_grouped(
     results: &[ContainerResult],
@@ -185,7 +185,11 @@ mod tests {
     #[test]
     fn test_csv_serialization_format() {
         let container = mock_container("csv-id", "/csv-write");
-        let finding = mock_finding("readonly_rootfs", "rootfs is writable", RiskLevel::Informative);
+        let finding = mock_finding(
+            "readonly_rootfs",
+            "rootfs is writable",
+            RiskLevel::Informative,
+        );
 
         let export_rows = to_exportable_csv(&[ContainerResult {
             container,
@@ -200,5 +204,60 @@ mod tests {
         assert!(data.contains("readonly_rootfs"));
         assert!(data.contains("rootfs is writable"));
     }
-}
 
+    #[test]
+    fn test_export_findings_grouped_json_to_file() {
+        use crate::cli::OutputFormat;
+        use std::fs;
+        use tempfile::NamedTempFile;
+
+        let container = mock_container("json123", "/json-container");
+        let finding = mock_finding("network", "host network mode", RiskLevel::Medium);
+
+        let results = vec![ContainerResult {
+            container,
+            findings: vec![finding],
+        }];
+
+        let temp_file = NamedTempFile::new().expect("Failed to create temp file");
+        let path = temp_file.path().to_path_buf();
+        export_findings_grouped(
+            &results,
+            &OutputFormat::Json,
+            &Some(path.to_string_lossy().into()),
+        );
+
+        let content = fs::read_to_string(path).expect("Failed to read exported JSON");
+        assert!(content.contains("network"));
+        assert!(content.contains("host network mode"));
+        assert!(content.contains("json123"));
+    }
+
+    #[test]
+    fn test_export_findings_grouped_csv_to_file() {
+        use crate::cli::OutputFormat;
+        use std::fs;
+        use tempfile::NamedTempFile;
+
+        let container = mock_container("csv123", "/csv-container");
+        let finding = mock_finding("capabilities", "SYS_ADMIN found", RiskLevel::High);
+
+        let results = vec![ContainerResult {
+            container,
+            findings: vec![finding],
+        }];
+
+        let temp_file = NamedTempFile::new().expect("Failed to create temp file");
+        let path = temp_file.path().to_path_buf();
+        export_findings_grouped(
+            &results,
+            &OutputFormat::Csv,
+            &Some(path.to_string_lossy().into()),
+        );
+
+        let content = fs::read_to_string(path).expect("Failed to read exported CSV");
+        assert!(content.contains("capabilities"));
+        assert!(content.contains("SYS_ADMIN found"));
+        assert!(content.contains("High"));
+    }
+}
