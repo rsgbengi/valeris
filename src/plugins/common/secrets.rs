@@ -149,5 +149,18 @@ mod tests {
 
         assert!(findings.is_empty());
     }
+
+        #[test]
+    fn detects_sensitive_env_vars_lowercase_key() {
+        let container = make_container_with_env(vec!["password=abc"]);
+
+        let plugin = SecretsPlugin;
+        let findings = plugin.run(&ScanInput::DockerContainer(container));
+
+        assert_eq!(findings.len(), 1);
+        assert!(findings.iter().any(|f| f.description.contains("password = abc")));
+        assert!(findings.iter().all(|f| f.risk == RiskLevel::High));
+    }
+
 }
 

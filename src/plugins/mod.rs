@@ -41,3 +41,34 @@ pub fn load_plugins_for_target(target: PluginTarget) -> Vec<Box<dyn ValerisPlugi
 }
 
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn loads_docker_plugins() {
+        let plugins = load_plugins_for_target(PluginTarget::Docker);
+        assert!(!plugins.is_empty());
+        assert!(plugins
+            .iter()
+            .all(|p| matches!(p.target(), PluginTarget::Docker | PluginTarget::Both)));
+    }
+
+    #[test]
+    fn loads_kubernetes_plugins() {
+        let plugins = load_plugins_for_target(PluginTarget::Kubernetes);
+        assert!(!plugins.is_empty());
+        assert!(plugins
+            .iter()
+            .all(|p| matches!(p.target(), PluginTarget::Kubernetes | PluginTarget::Both)));
+    }
+
+    #[test]
+    fn loads_all_plugins_for_both() {
+        let plugins = load_plugins_for_target(PluginTarget::Both);
+        assert!(!plugins.is_empty());
+        // Expect at least one Docker-specific and one cross-target plugin
+        assert!(plugins.iter().any(|p| p.target() == PluginTarget::Docker));
+        assert!(plugins.iter().any(|p| p.target() == PluginTarget::Both));
+    }
+}

@@ -57,7 +57,7 @@ valeris scan
 valeris scan --only root_user,secrets_in_env
 
 # Exclude noisy checks
-valeris scan --exclude mounts_rw,privileged_mode
+valeris scan --exclude mounts,privileged_mode
 ```
 
 ## 📦 Example Output

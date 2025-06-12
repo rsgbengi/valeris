@@ -110,4 +110,96 @@ mod tests {
         assert!(!findings.is_empty());
         assert!(findings.iter().any(|f| f.risk == RiskLevel::High));
     }
+        fn mock_container_local_binding() -> ContainerInspectResponse {
+        let mut bindings = HashMap::new();
+        bindings.insert(
+            "80/tcp".to_string(),
+            Some(vec![PortBinding {
+                host_ip: Some("127.0.0.1".to_string()),
+                host_port: Some("8080".to_string()),
+            }]),
+        );
+
+        let network_settings = NetworkSettings {
+            ports: Some(bindings),
+            ..Default::default()
+        };
+
+        ContainerInspectResponse {
+            network_settings: Some(network_settings),
+            ..Default::default()
+        }
+    }
+
+    fn mock_container_none_binding() -> ContainerInspectResponse {
+        let mut bindings = HashMap::new();
+        bindings.insert("80/tcp".to_string(), None);
+
+        let network_settings = NetworkSettings {
+            ports: Some(bindings),
+            ..Default::default()
+        };
+
+        ContainerInspectResponse {
+            network_settings: Some(network_settings),
+            ..Default::default()
+        }
+    }
+
+    fn mock_container_duplicate_bindings() -> ContainerInspectResponse {
+        let mut bindings = HashMap::new();
+        bindings.insert(
+            "80/tcp".to_string(),
+            Some(vec![
+                PortBinding {
+                    host_ip: Some("0.0.0.0".to_string()),
+                    host_port: Some("8080".to_string()),
+                },
+                PortBinding {
+                    host_ip: Some("127.0.0.1".to_string()),
+                    host_port: Some("8080".to_string()),
+                },
+            ]),
+        );
+
+        let network_settings = NetworkSettings {
+            ports: Some(bindings),
+            ..Default::default()
+        };
+
+        ContainerInspectResponse {
+            network_settings: Some(network_settings),
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn local_bindings_are_medium_risk() {
+        let plugin = PortPlugin;
+        let input = ScanInput::DockerContainer(mock_container_local_binding());
+        let findings = plugin.run(&input);
+
+        assert_eq!(findings.len(), 1);
+        assert_eq!(findings[0].risk, RiskLevel::Medium);
+    }
+
+    #[test]
+    fn informative_for_none_bindings() {
+        let plugin = PortPlugin;
+        let input = ScanInput::DockerContainer(mock_container_none_binding());
+        let findings = plugin.run(&input);
+
+        assert_eq!(findings.len(), 1);
+        assert_eq!(findings[0].risk, RiskLevel::Informative);
+    }
+
+    #[test]
+    fn avoids_duplicate_findings() {
+        let plugin = PortPlugin;
+        let input = ScanInput::DockerContainer(mock_container_duplicate_bindings());
+        let findings = plugin.run(&input);
+
+        assert_eq!(findings.len(), 1);
+        assert_eq!(findings[0].risk, RiskLevel::High);
+    }
 }

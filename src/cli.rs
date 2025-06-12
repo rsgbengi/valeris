@@ -33,7 +33,7 @@ pub enum Commands {
 
         #[arg(
             long,
-            help = "Run only the specified plugin(s), comma-separated (e.g. --only ports,secrets)"
+            help = "Run only the specified plugin(s), comma-separated (e.g. --only exposed_ports,secrets_in_env)"
         )]
         only: Option<String>,
 
