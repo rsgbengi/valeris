@@ -60,6 +60,16 @@ valeris scan --only root_user,secrets_in_env
 valeris scan --exclude mounts,privileged_mode
 ```
 
+## 🔌 List Available Plugins
+
+Check which detectors are bundled with Valeris:
+
+```bash
+valeris list-plugins
+# or filter by target
+valeris list-plugins --target docker
+```
+
 ## 📦 Example Output
 
 ```

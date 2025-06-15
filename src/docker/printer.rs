@@ -1,6 +1,6 @@
 use crate::docker::model::{Finding, RiskLevel};
 use bollard::models::ContainerInspectResponse;
-use colored::*; // importa colores
+use colored::*; 
 
 pub fn print_container_report(container: &ContainerInspectResponse, findings: &[Finding]) {
     let name = container
@@ -20,8 +20,27 @@ pub fn print_container_report(container: &ContainerInspectResponse, findings: &[
         format!("{image}:latest")
     };
 
+    let state_str = if let Some(state_obj) = &container.state {
+        match state_obj.status {
+            Some(ref s) => format!("{:?}", s),
+            None => "unknown".to_string(),
+        }
+    } else {
+        "unknown".to_string()
+    }; 
+
+
+     let status_colored = match state_str.as_str() {
+        "RUNNING" => "Running".green().bold(),
+        "EXITED" => "Exited".red().bold(),
+        "PAUSED" => "Paused".yellow().bold(),
+        "CREATED" => "Created".blue().bold(),
+        _ => state_str.dimmed(),
+    }; 
+
     println!("🔍 Container: {}", name.bold());
     println!("   └─ Image: {}", image_with_tag);
+    println!("   └─ Status: {}", status_colored);
 
     if findings.is_empty() {
         println!("{}", "   ✅ No findings detected.".green());

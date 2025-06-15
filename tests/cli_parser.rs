@@ -14,6 +14,12 @@ mod tests {
         "security_options",
         "root_user",
         "pid_mode",
+        "ipc_mode",
+        "uts_mode",
+        "resource_limits",
+        "no_new_privileges",
+        "user_namespace",
+        "pids_limit",
     ];
 
     #[test]
