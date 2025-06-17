@@ -2,9 +2,12 @@ use std::collections::HashSet;
 
 use anyhow::{bail, Result};
 use bollard::models::ContainerInspectResponse;
+use bollard::container::{InspectContainerOptions, ListContainersOptions};
+use bollard::Docker;
 
 use crate::docker::model::{ContainerResult, Finding};
 use crate::plugins::{load_plugins_for_target, PluginTarget, ScanInput};
+
 
 pub async fn scan_with_plugins_on_containers(
     containers: Vec<ContainerInspectResponse>,
@@ -31,12 +34,22 @@ pub async fn scan_with_plugins_on_containers(
     Ok(results)
 }
 
+fn parse_state_set(input: &Option<String>) -> Option<HashSet<String>> {
+    input.as_ref().map(|s| {
+        s.split(',')
+            .map(|id| id.trim().to_lowercase())
+            .collect::<HashSet<_>>()
+    })
+}
+
 pub async fn scan_docker_with_plugins(
     target: PluginTarget,
     only: Option<String>,
     exclude: Option<String>,
+    state: Option<String>
 ) -> Result<Vec<ContainerResult>> {
-    let containers = get_running_containers().await?;
+    let state_set = parse_state_set(&state);
+    let containers = get_running_containers(state_set.as_ref()).await?;
     scan_with_plugins_on_containers(containers, target, only, exclude).await
 }
 
@@ -88,9 +101,9 @@ fn run_plugins_on_container(
         .collect()
 }
 
-pub async fn get_running_containers() -> Result<Vec<ContainerInspectResponse>> {
-    use bollard::container::{InspectContainerOptions, ListContainersOptions};
-    use bollard::Docker;
+pub async fn get_running_containers(
+    states: Option<&HashSet<String>>,
+) -> Result<Vec<ContainerInspectResponse>> {
 
     let docker = Docker::connect_with_socket_defaults()?;
 
@@ -104,16 +117,40 @@ pub async fn get_running_containers() -> Result<Vec<ContainerInspectResponse>> {
     let mut result = Vec::new();
 
     for container in containers {
+        if let Some(filter) = states {
+            if let Some(state) = container.state.as_deref() {
+                if !filter.contains(&state.to_lowercase()) {
+                    continue;
+                }
+            } else {
+                continue;
+            }
+        }
+
         if let Some(id) = container.id.as_deref() {
             let inspect = docker
                 .inspect_container(id, None::<InspectContainerOptions>)
                 .await?;
+            if let Some(ref filter) = states {
+                if let Some(status) = inspect
+                    .state
+                    .as_ref()
+                    .and_then(|s| s.status.as_ref())
+                    .map(|s| format!("{:?}", s).to_lowercase())
+                {
+                    if !filter.contains(&status) {
+                        continue;
+                    }
+                }
+            }
             result.push(inspect);
         }
     }
 
     Ok(result)
+
 }
+
 
 #[cfg(test)]
 mod tests {
@@ -181,5 +218,19 @@ mod tests {
         let ids = collect_plugin_ids(&plugins);
         assert!(ids.contains("ports"));
         assert!(ids.contains("capabilities"));
+    }
+       #[test]
+    fn test_parse_state_set() {
+        let input = Some(" running,Exited ".to_string());
+        let set = parse_state_set(&input).unwrap();
+        assert!(set.contains("running"));
+        assert!(set.contains("exited"));
+        assert_eq!(set.len(), 2);
+    }
+
+    #[test]
+    fn test_parse_state_set_none() {
+        let input: Option<String> = None;
+        assert!(parse_state_set(&input).is_none());
     }
 }

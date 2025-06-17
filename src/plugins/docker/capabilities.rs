@@ -2,6 +2,7 @@ use super::ValerisPlugin;
 use crate::docker::model::{Finding, RiskLevel};
 use crate::plugins::{PluginTarget, ScanInput};
 
+
 pub struct CapabilitiesPlugin;
 
 impl ValerisPlugin for CapabilitiesPlugin {

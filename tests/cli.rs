@@ -95,3 +95,11 @@ fn scan_runs_with_duplicate_plugins_in_only() {
         .assert()
         .success();
 }
+
+#[test]
+fn scan_runs_with_state_filter() {
+    let mut cmd = Command::cargo_bin("valeris").unwrap();
+    cmd.args(["scan", "--state", "running"])
+        .assert()
+        .success();
+}

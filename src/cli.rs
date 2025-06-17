@@ -42,7 +42,9 @@ pub enum Commands {
             help = "Exclude the specified plugin(s), comma-separated (e.g. --exclude privileged_mode,readonly_rootfs)"
         )]
         exclude: Option<String>,
-        #[arg(
+         #[arg(long, help = "Filter containers by state, comma separated (e.g. running,exited)"
+        )]
+        state: Option<String>,#[arg(
             long,
             value_enum,
             default_value = "json",

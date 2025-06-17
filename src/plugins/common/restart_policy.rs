@@ -1,6 +1,8 @@
 use bollard::secret::RestartPolicyNameEnum;
 
-use super::super::{PluginTarget, ScanInput, ValerisPlugin};
+use crate::plugins::{PluginTarget, ScanInput, ValerisPlugin};
+
+
 use crate::docker::model::{Finding, RiskLevel};
 
 pub struct RestartPolicyPlugin;
@@ -66,6 +68,7 @@ impl ValerisPlugin for RestartPolicyPlugin {
         }]
     }
 }
+
 
 #[cfg(test)]
 mod tests {

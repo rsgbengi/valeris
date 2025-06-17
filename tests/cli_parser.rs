@@ -17,7 +17,6 @@ mod tests {
         "ipc_mode",
         "uts_mode",
         "resource_limits",
-        "no_new_privileges",
         "user_namespace",
         "pids_limit",
     ];
@@ -44,6 +43,7 @@ mod tests {
                 exclude,
                 format,
                 output,
+                ..
             } => {
                 assert_eq!(target, ScanTarget::Docker);
                 assert_eq!(only.unwrap(), "ports,secrets");
@@ -65,6 +65,7 @@ mod tests {
                 exclude,
                 format,
                 output,
+                ..
             } => {
                 assert_eq!(target, ScanTarget::Docker);
                 assert!(only.is_none());
@@ -167,6 +168,17 @@ mod tests {
         }
     }
 
+      #[test]
+    fn parses_state_option() {
+        let cli = Cli::parse_from(["valeris", "scan", "--state", "running,exited"]);
+        match cli.command {
+            Commands::Scan { state: Some(s), .. } => {
+                assert_eq!(s, "running,exited");
+            }
+            _ => panic!("Expected Scan command"),
+        }
+    }
+
     #[test]
     fn parses_complex_scan_command() {
         let cli = Cli::parse_from([
@@ -190,6 +202,7 @@ mod tests {
                 exclude,
                 output,
                 format,
+                ..
             } => {
                 assert_eq!(target, ScanTarget::Docker);
                 assert_eq!(only.unwrap(), "capabilities,network");

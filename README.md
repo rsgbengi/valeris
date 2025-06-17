@@ -58,6 +58,9 @@ valeris scan --only root_user,secrets_in_env
 
 # Exclude noisy checks
 valeris scan --exclude mounts,privileged_mode
+
+# Filter containers by state
+valeris scan --state running
 ```
 
 ## 🔌 List Available Plugins

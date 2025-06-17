@@ -5,6 +5,7 @@ use crate::docker::model::Finding;
 use bollard::models::ContainerInspectResponse;
 
 
+
 #[derive(Debug, PartialEq, Eq)]
 pub enum PluginTarget {
     Docker,
@@ -67,7 +68,6 @@ mod tests {
     fn loads_all_plugins_for_both() {
         let plugins = load_plugins_for_target(PluginTarget::Both);
         assert!(!plugins.is_empty());
-        // Expect at least one Docker-specific and one cross-target plugin
         assert!(plugins.iter().any(|p| p.target() == PluginTarget::Docker));
         assert!(plugins.iter().any(|p| p.target() == PluginTarget::Both));
     }

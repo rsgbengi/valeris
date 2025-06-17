@@ -39,6 +39,7 @@ where
             target,
             only,
             exclude,
+            state,
             format,
             output,
         } => {
@@ -48,7 +49,7 @@ where
                 ScanTarget::Both => PluginTarget::Both,
             };
 
-            let results = scan_docker_with_plugins(target, only, exclude).await?;
+            let results = scan_docker_with_plugins(target, only, exclude, state).await?;
 
             if output.is_some() {
                 export_findings_grouped(&results, &format, &output);
