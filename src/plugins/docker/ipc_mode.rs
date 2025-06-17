@@ -1,4 +1,3 @@
-
 use super::ValerisPlugin;
 use crate::docker::model::{Finding, RiskLevel};
 use crate::plugins::{PluginTarget, ScanInput};
@@ -28,7 +27,8 @@ impl ValerisPlugin for IpcModePlugin {
         let is_host_ipc = container
             .host_config
             .as_ref()
-            .and_then(|hc| hc.ipc_mode.as_deref()) == Some("host");
+            .and_then(|hc| hc.ipc_mode.as_deref())
+            == Some("host");
 
         if is_host_ipc {
             vec![Finding {

@@ -7,9 +7,9 @@ use crate::plugins::PluginTarget;
 use clap::Parser;
 use cli::{Cli, Commands, ScanTarget};
 use docker::exporters::export_findings_grouped;
+use docker::printer::print_container_report;
 use docker::scanner::scan_docker_with_plugins;
 use plugins::load_plugins_for_target;
-use docker::printer::print_container_report;
 
 pub fn list_plugins(filter_target: PluginTarget) {
     let plugins = load_plugins_for_target(filter_target);

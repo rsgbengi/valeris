@@ -43,7 +43,7 @@ impl ValerisPlugin for ReadOnlyRootFSPlugin {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::docker::model::{RiskLevel};
+    use crate::docker::model::RiskLevel;
     use bollard::models::{ContainerInspectResponse, HostConfig};
 
     #[test]
@@ -105,4 +105,3 @@ mod tests {
         assert!(findings.is_empty());
     }
 }
-

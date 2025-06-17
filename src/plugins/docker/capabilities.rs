@@ -2,7 +2,6 @@ use super::ValerisPlugin;
 use crate::docker::model::{Finding, RiskLevel};
 use crate::plugins::{PluginTarget, ScanInput};
 
-
 pub struct CapabilitiesPlugin;
 
 impl ValerisPlugin for CapabilitiesPlugin {
@@ -70,7 +69,7 @@ impl ValerisPlugin for CapabilitiesPlugin {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::docker::model::{RiskLevel};
+    use crate::docker::model::RiskLevel;
     use bollard::models::{ContainerInspectResponse, HostConfig};
 
     #[test]
@@ -94,8 +93,14 @@ mod tests {
         let findings = plugin.run(&input);
 
         assert_eq!(findings.len(), 3);
-        assert!(findings.iter().any(|f| f.risk == RiskLevel::High && f.description.contains("SYS_ADMIN")));
-        assert!(findings.iter().any(|f| f.risk == RiskLevel::Medium && f.description.contains("CHOWN")));
-        assert!(findings.iter().any(|f| f.risk == RiskLevel::Low && f.description.contains("FOO")));
+        assert!(findings
+            .iter()
+            .any(|f| f.risk == RiskLevel::High && f.description.contains("SYS_ADMIN")));
+        assert!(findings
+            .iter()
+            .any(|f| f.risk == RiskLevel::Medium && f.description.contains("CHOWN")));
+        assert!(findings
+            .iter()
+            .any(|f| f.risk == RiskLevel::Low && f.description.contains("FOO")));
     }
 }

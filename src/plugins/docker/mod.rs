@@ -1,20 +1,17 @@
-pub mod user;
-pub mod mounts;
-pub mod ports;
-pub mod privileged;
 pub mod capabilities;
+pub mod ipc_mode;
+pub mod mounts;
 pub mod network;
 pub mod pid_mode;
-pub mod readonly;
-pub mod securityopt;
-pub mod resource_limits;
-pub mod ipc_mode;
-pub mod uts_mode;
-pub mod userns;
 pub mod pids_limit;
-
-
-
+pub mod ports;
+pub mod privileged;
+pub mod readonly;
+pub mod resource_limits;
+pub mod securityopt;
+pub mod user;
+pub mod userns;
+pub mod uts_mode;
 
 use super::ValerisPlugin;
 

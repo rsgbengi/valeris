@@ -50,7 +50,7 @@ impl ValerisPlugin for SecurityOptPlugin {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::docker::model::{RiskLevel};
+    use crate::docker::model::RiskLevel;
     use bollard::models::{ContainerInspectResponse, HostConfig};
 
     #[test]
@@ -74,8 +74,12 @@ mod tests {
 
         assert_eq!(findings.len(), 2);
 
-        assert!(findings.iter().any(|f| f.risk == RiskLevel::High && f.description.contains("unconfined")));
-        assert!(findings.iter().any(|f| f.risk == RiskLevel::Informative && f.description.contains("seccomp")));
+        assert!(findings
+            .iter()
+            .any(|f| f.risk == RiskLevel::High && f.description.contains("unconfined")));
+        assert!(findings
+            .iter()
+            .any(|f| f.risk == RiskLevel::Informative && f.description.contains("seccomp")));
     }
 
     #[test]
@@ -116,4 +120,3 @@ mod tests {
         assert!(findings.is_empty());
     }
 }
-

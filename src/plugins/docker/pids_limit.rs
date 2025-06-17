@@ -35,20 +35,17 @@ impl ValerisPlugin for PidsLimitPlugin {
             }
         };
 
-        let has_limit = host_config
-            .pids_limit
-            .filter(|&l| l > 0)
-            .is_some()
+        let has_limit = host_config.pids_limit.filter(|&l| l > 0).is_some()
             || host_config
                 .ulimits
                 .as_ref()
-                .map(|ul|
+                .map(|ul| {
                     ul.iter().any(|u| {
                         let name = u.name.as_deref().unwrap_or("");
-                        (name == "nproc" || name == "pids") &&
-                        (u.soft.unwrap_or(0) > 0 || u.hard.unwrap_or(0) > 0)
+                        (name == "nproc" || name == "pids")
+                            && (u.soft.unwrap_or(0) > 0 || u.hard.unwrap_or(0) > 0)
                     })
-                )
+                })
                 .unwrap_or(false);
 
         if has_limit {

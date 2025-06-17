@@ -1,6 +1,6 @@
 use crate::docker::model::{Finding, RiskLevel};
 use bollard::models::ContainerInspectResponse;
-use colored::*; 
+use colored::*;
 
 pub fn print_container_report(container: &ContainerInspectResponse, findings: &[Finding]) {
     let name = container
@@ -27,16 +27,15 @@ pub fn print_container_report(container: &ContainerInspectResponse, findings: &[
         }
     } else {
         "unknown".to_string()
-    }; 
+    };
 
-
-     let status_colored = match state_str.as_str() {
+    let status_colored = match state_str.as_str() {
         "RUNNING" => "Running".green().bold(),
         "EXITED" => "Exited".red().bold(),
         "PAUSED" => "Paused".yellow().bold(),
         "CREATED" => "Created".blue().bold(),
         _ => state_str.dimmed(),
-    }; 
+    };
 
     println!("🔍 Container: {}", name.bold());
     println!("   └─ Image: {}", image_with_tag);
@@ -52,9 +51,17 @@ pub fn print_container_report(container: &ContainerInspectResponse, findings: &[
                 RiskLevel::Low => " [·]  ".blue(),
                 RiskLevel::Informative => " [i]  ".white(),
             };
-            println!("{} {}: {}", prefix, finding.kind.cyan(), finding.description);
+            println!(
+                "{} {}: {}",
+                prefix,
+                finding.kind.cyan(),
+                finding.description
+            );
         }
     }
 
-    println!("{}", "---------------------------------------------".dimmed());
+    println!(
+        "{}",
+        "---------------------------------------------".dimmed()
+    );
 }

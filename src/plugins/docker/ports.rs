@@ -110,7 +110,7 @@ mod tests {
         assert!(!findings.is_empty());
         assert!(findings.iter().any(|f| f.risk == RiskLevel::High));
     }
-        fn mock_container_local_binding() -> ContainerInspectResponse {
+    fn mock_container_local_binding() -> ContainerInspectResponse {
         let mut bindings = HashMap::new();
         bindings.insert(
             "80/tcp".to_string(),

@@ -26,7 +26,8 @@ impl ValerisPlugin for PidModePlugin {
         let pid_mode = container
             .host_config
             .as_ref()
-            .and_then(|hc| hc.pid_mode.as_deref()) == Some("host");
+            .and_then(|hc| hc.pid_mode.as_deref())
+            == Some("host");
 
         if pid_mode {
             vec![Finding {
@@ -43,7 +44,7 @@ impl ValerisPlugin for PidModePlugin {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::docker::model::{RiskLevel};
+    use crate::docker::model::RiskLevel;
     use bollard::models::{ContainerInspectResponse, HostConfig};
 
     #[test]
@@ -88,4 +89,3 @@ mod tests {
         assert!(findings.is_empty());
     }
 }
-

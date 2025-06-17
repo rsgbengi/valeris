@@ -168,7 +168,7 @@ mod tests {
         }
     }
 
-      #[test]
+    #[test]
     fn parses_state_option() {
         let cli = Cli::parse_from(["valeris", "scan", "--state", "running,exited"]);
         match cli.command {

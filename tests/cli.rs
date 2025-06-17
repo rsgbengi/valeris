@@ -1,6 +1,6 @@
 use assert_cmd::Command;
-use predicates::str::*;
 use predicates::prelude::*;
+use predicates::str::*;
 
 #[test]
 fn prints_help() {
@@ -31,9 +31,7 @@ fn scan_fails_with_invalid_plugin() {
 #[test]
 fn scan_runs_with_defaults() {
     let mut cmd = Command::cargo_bin("valeris").unwrap();
-    cmd.arg("scan")
-        .assert()
-        .success();
+    cmd.arg("scan").assert().success();
 }
 
 #[test]
@@ -47,9 +45,15 @@ fn scan_runs_with_exclude() {
 #[test]
 fn scan_runs_with_only_and_exclude() {
     let mut cmd = Command::cargo_bin("valeris").unwrap();
-    cmd.args(["scan", "--only", "exposed_ports", "--exclude", "readonly_rootfs"])
-        .assert()
-        .success();
+    cmd.args([
+        "scan",
+        "--only",
+        "exposed_ports",
+        "--exclude",
+        "readonly_rootfs",
+    ])
+    .assert()
+    .success();
 }
 
 #[test]
@@ -99,7 +103,5 @@ fn scan_runs_with_duplicate_plugins_in_only() {
 #[test]
 fn scan_runs_with_state_filter() {
     let mut cmd = Command::cargo_bin("valeris").unwrap();
-    cmd.args(["scan", "--state", "running"])
-        .assert()
-        .success();
+    cmd.args(["scan", "--state", "running"]).assert().success();
 }

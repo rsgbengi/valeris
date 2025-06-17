@@ -1,10 +1,8 @@
-pub mod docker;
 pub mod common;
+pub mod docker;
 
 use crate::docker::model::Finding;
 use bollard::models::ContainerInspectResponse;
-
-
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum PluginTarget {
@@ -26,8 +24,6 @@ pub trait ValerisPlugin {
     fn run(&self, input: &ScanInput) -> Vec<Finding>;
 }
 
-
-
 pub fn load_plugins_for_target(target: PluginTarget) -> Vec<Box<dyn ValerisPlugin>> {
     let mut plugins = Vec::new();
 
@@ -40,7 +36,6 @@ pub fn load_plugins_for_target(target: PluginTarget) -> Vec<Box<dyn ValerisPlugi
 
     plugins
 }
-
 
 #[cfg(test)]
 mod tests {

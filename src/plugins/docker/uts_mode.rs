@@ -27,7 +27,8 @@ impl ValerisPlugin for UtsModePlugin {
         let is_host_uts = container
             .host_config
             .as_ref()
-            .and_then(|hc| hc.uts_mode.as_deref()) == Some("host");
+            .and_then(|hc| hc.uts_mode.as_deref())
+            == Some("host");
 
         if is_host_uts {
             vec![Finding {

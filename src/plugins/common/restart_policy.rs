@@ -2,7 +2,6 @@ use bollard::secret::RestartPolicyNameEnum;
 
 use crate::plugins::{PluginTarget, ScanInput, ValerisPlugin};
 
-
 use crate::docker::model::{Finding, RiskLevel};
 
 pub struct RestartPolicyPlugin;
@@ -69,15 +68,16 @@ impl ValerisPlugin for RestartPolicyPlugin {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::docker::model::{RiskLevel};
+    use crate::docker::model::RiskLevel;
     use bollard::models::{ContainerInspectResponse, HostConfig, RestartPolicy};
     use bollard::secret::RestartPolicyNameEnum;
 
-    fn make_container_with_policy(policy: Option<RestartPolicyNameEnum>) -> ContainerInspectResponse {
+    fn make_container_with_policy(
+        policy: Option<RestartPolicyNameEnum>,
+    ) -> ContainerInspectResponse {
         let restart_policy = RestartPolicy {
             name: policy,
             ..Default::default()
@@ -146,7 +146,8 @@ mod tests {
 
         assert_eq!(findings.len(), 1);
         assert_eq!(findings[0].risk, RiskLevel::Medium);
-        assert!(findings[0].description.contains("No restart policy defined"));
+        assert!(findings[0]
+            .description
+            .contains("No restart policy defined"));
     }
 }
-

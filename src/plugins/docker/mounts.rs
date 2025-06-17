@@ -53,7 +53,7 @@ impl ValerisPlugin for MountPlugin {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::docker::model::{RiskLevel};
+    use crate::docker::model::RiskLevel;
     use bollard::models::{ContainerInspectResponse, MountPoint};
 
     #[test]
@@ -82,8 +82,11 @@ mod tests {
 
         assert_eq!(findings.len(), 2);
 
-        assert!(findings.iter().any(|f| f.risk == RiskLevel::High && f.description.contains("/var/run/docker.sock")));
-        assert!(findings.iter().any(|f| f.risk == RiskLevel::Informative && f.description.contains("/data")));
+        assert!(findings
+            .iter()
+            .any(|f| f.risk == RiskLevel::High && f.description.contains("/var/run/docker.sock")));
+        assert!(findings
+            .iter()
+            .any(|f| f.risk == RiskLevel::Informative && f.description.contains("/data")));
     }
 }
-

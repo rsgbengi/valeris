@@ -26,7 +26,8 @@ impl ValerisPlugin for NetworkPlugin {
         let is_host_network = container
             .host_config
             .as_ref()
-            .and_then(|hc| hc.network_mode.as_deref()) == Some("host");
+            .and_then(|hc| hc.network_mode.as_deref())
+            == Some("host");
 
         if is_host_network {
             vec![Finding {
@@ -43,7 +44,7 @@ impl ValerisPlugin for NetworkPlugin {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::docker::model::{RiskLevel};
+    use crate::docker::model::RiskLevel;
     use bollard::models::{ContainerInspectResponse, HostConfig};
 
     #[test]
@@ -86,4 +87,3 @@ mod tests {
         assert!(findings.is_empty());
     }
 }
-

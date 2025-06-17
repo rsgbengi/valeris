@@ -1,13 +1,12 @@
 use std::collections::HashSet;
 
 use anyhow::{bail, Result};
-use bollard::models::ContainerInspectResponse;
 use bollard::container::{InspectContainerOptions, ListContainersOptions};
+use bollard::models::ContainerInspectResponse;
 use bollard::Docker;
 
 use crate::docker::model::{ContainerResult, Finding};
 use crate::plugins::{load_plugins_for_target, PluginTarget, ScanInput};
-
 
 pub async fn scan_with_plugins_on_containers(
     containers: Vec<ContainerInspectResponse>,
@@ -27,7 +26,10 @@ pub async fn scan_with_plugins_on_containers(
         .into_iter()
         .map(|container| {
             let findings = run_plugins_on_container(&container, &plugins, &only_set, &exclude_set);
-            ContainerResult { container, findings }
+            ContainerResult {
+                container,
+                findings,
+            }
         })
         .collect();
 
@@ -46,7 +48,7 @@ pub async fn scan_docker_with_plugins(
     target: PluginTarget,
     only: Option<String>,
     exclude: Option<String>,
-    state: Option<String>
+    state: Option<String>,
 ) -> Result<Vec<ContainerResult>> {
     let state_set = parse_state_set(&state);
     let containers = get_running_containers(state_set.as_ref()).await?;
@@ -74,7 +76,11 @@ fn validate_plugin_ids(
         let unknown: Vec<_> = ids.difference(available).cloned().collect();
         if !unknown.is_empty() {
             let list = unknown.join(", ");
-            let plural = if unknown.len() > 1 { "plugins" } else { "plugin" };
+            let plural = if unknown.len() > 1 {
+                "plugins"
+            } else {
+                "plugin"
+            };
             bail!("Unknown {} in {}: {}", plural, flag, list);
         }
     }
@@ -104,7 +110,6 @@ fn run_plugins_on_container(
 pub async fn get_running_containers(
     states: Option<&HashSet<String>>,
 ) -> Result<Vec<ContainerInspectResponse>> {
-
     let docker = Docker::connect_with_socket_defaults()?;
 
     let containers = docker
@@ -131,7 +136,7 @@ pub async fn get_running_containers(
             let inspect = docker
                 .inspect_container(id, None::<InspectContainerOptions>)
                 .await?;
-            if let Some(ref filter) = states {
+            if let Some(filter) = states {
                 if let Some(status) = inspect
                     .state
                     .as_ref()
@@ -148,9 +153,7 @@ pub async fn get_running_containers(
     }
 
     Ok(result)
-
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -219,7 +222,7 @@ mod tests {
         assert!(ids.contains("ports"));
         assert!(ids.contains("capabilities"));
     }
-       #[test]
+    #[test]
     fn test_parse_state_set() {
         let input = Some(" running,Exited ".to_string());
         let set = parse_state_set(&input).unwrap();

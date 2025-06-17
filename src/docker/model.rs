@@ -3,7 +3,7 @@ use serde::Serialize;
 
 #[derive(Debug, Serialize, Clone)]
 pub struct Finding {
-    pub kind: String, 
+    pub kind: String,
     pub description: String,
     pub risk: RiskLevel,
 }
@@ -19,4 +19,3 @@ pub struct ContainerResult {
     pub container: ContainerInspectResponse,
     pub findings: Vec<Finding>,
 }
-

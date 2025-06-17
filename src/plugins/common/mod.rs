@@ -1,5 +1,5 @@
-pub mod secrets;
 pub mod restart_policy;
+pub mod secrets;
 
 use crate::plugins::ValerisPlugin;
 

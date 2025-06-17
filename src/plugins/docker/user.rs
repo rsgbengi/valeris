@@ -26,7 +26,8 @@ impl ValerisPlugin for UserPlugin {
         let user = container
             .config
             .as_ref()
-            .and_then(|c| c.user.as_deref()).filter(|u| !u.trim().is_empty())
+            .and_then(|c| c.user.as_deref())
+            .filter(|u| !u.trim().is_empty())
             .unwrap_or("root");
 
         if user == "root" || user == "0" {
@@ -44,8 +45,8 @@ impl ValerisPlugin for UserPlugin {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::docker::model::{RiskLevel};
-    use bollard::models::{ContainerInspectResponse, ContainerConfig};
+    use crate::docker::model::RiskLevel;
+    use bollard::models::{ContainerConfig, ContainerInspectResponse};
 
     #[test]
     fn detects_root_user_by_default() {
@@ -145,4 +146,3 @@ mod tests {
         assert_eq!(findings.len(), 1);
     }
 }
-
