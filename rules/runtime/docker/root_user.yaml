@@ -1,0 +1,11 @@
+id: root_user
+name: "Root User (YAML)"
+target: docker_runtime
+severity: HIGH
+description: Detect containers running as root.
+match:
+  jsonpath: "$.Config.User"
+  equals: ""
+message: "Container is running as root"
+fix: |
+  Specify a non-root user with the --user flag.

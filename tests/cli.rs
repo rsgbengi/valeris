@@ -25,7 +25,7 @@ fn scan_fails_with_invalid_plugin() {
     cmd.args(["scan", "--only", "invalid_plugin"])
         .assert()
         .failure()
-        .stderr(contains("Unknown plugin"));
+        .stderr(contains("Unknown detector"));
 }
 
 #[test]
@@ -62,7 +62,7 @@ fn scan_fails_with_invalid_exclude() {
     cmd.args(["scan", "--exclude", "does_not_exist"])
         .assert()
         .failure()
-        .stderr(contains("Unknown plugin"));
+        .stderr(contains("Unknown detector"));
 }
 
 #[test]

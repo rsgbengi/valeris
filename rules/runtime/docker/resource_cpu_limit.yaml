@@ -1,0 +1,11 @@
+id: resource_limits_cpu
+name: "Resource Limits Checker (CPU)"
+target: docker_runtime
+severity: MEDIUM
+description: Detects containers without CPU limits.
+match:
+  jsonpath: "$.HostConfig.NanoCpus"
+  equals: 0
+message: "CPU limit not set"
+fix: |
+  Configure CPU limits via --cpus or --cpu-shares.

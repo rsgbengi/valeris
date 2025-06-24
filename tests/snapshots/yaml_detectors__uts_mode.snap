@@ -1,0 +1,11 @@
+---
+source: tests/yaml_detectors.rs
+expression: findings
+---
+[
+  {
+    "kind": "uts_mode",
+    "description": "Container is using host UTS mode",
+    "risk": "Medium"
+  }
+]

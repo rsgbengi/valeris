@@ -1,0 +1,11 @@
+---
+source: tests/yaml_detectors.rs
+expression: findings
+---
+[
+  {
+    "kind": "restart_policy",
+    "description": "No restart policy defined",
+    "risk": "Medium"
+  }
+]

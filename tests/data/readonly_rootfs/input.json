@@ -1,0 +1,5 @@
+{
+  "HostConfig": {
+    "ReadonlyRootfs": true
+  }
+}

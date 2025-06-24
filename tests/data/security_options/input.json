@@ -1,0 +1,8 @@
+{
+  "HostConfig": {
+    "SecurityOpt": [
+      "seccomp=unconfined",
+      "apparmor=docker-default"
+    ]
+  }
+}

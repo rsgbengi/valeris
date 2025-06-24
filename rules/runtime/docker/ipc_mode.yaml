@@ -1,0 +1,11 @@
+id: ipc_mode
+name: "Host IPC Mode Checker"
+target: docker_runtime
+severity: MEDIUM
+description: Detects usage of host IPC namespace.
+match:
+  jsonpath: "$.HostConfig.IpcMode"
+  equals: "host"
+message: "Container is using host IPC mode"
+fix: |
+  Avoid sharing the host IPC namespace.

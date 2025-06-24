@@ -1,0 +1,11 @@
+id: pid_mode
+name: "Host PID Mode Checker"
+target: docker_runtime
+severity: INFO
+description: Detects usage of host PID namespace.
+match:
+  jsonpath: "$.HostConfig.PidMode"
+  equals: "host"
+message: "Container is using host PID mode"
+fix: |
+  Use an isolated PID namespace unless strictly required

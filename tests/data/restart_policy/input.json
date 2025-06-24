@@ -1,0 +1,7 @@
+{
+  "HostConfig": {
+    "RestartPolicy": {
+      "name": null
+    }
+  }
+}

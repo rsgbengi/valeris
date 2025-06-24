@@ -1,0 +1,11 @@
+id: readonly_rootfs
+name: "Read-Only Root Filesystem Checker"
+target: docker_runtime
+severity: INFO
+description: Detects containers with read-only root filesystem enabled.
+match:
+  jsonpath: "$.HostConfig.ReadonlyRootfs"
+  equals: true
+message: "Container is running in read-only mode"
+fix: |
+  Enable read-only mode to reduce the impact of compromises.

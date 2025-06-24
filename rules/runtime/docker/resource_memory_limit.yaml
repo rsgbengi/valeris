@@ -1,0 +1,11 @@
+id: resource_limits_memory
+name: "Resource Limits Checker (Memory)"
+target: docker_runtime
+severity: MEDIUM
+description: Detects containers without memory limits.
+match:
+  jsonpath: "$.HostConfig.Memory"
+  equals: 0
+message: "Memory limit not set"
+fix: |
+  Configure a memory limit via --memory.

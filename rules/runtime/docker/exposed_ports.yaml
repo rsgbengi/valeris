@@ -1,0 +1,15 @@
+id: exposed_ports
+name: "Exposed Ports Analyzer"
+target: docker_runtime
+severity: INFO
+description: Detects exposed ports
+match:
+  parts:
+    - jsonpath: "$.NetworkSettings.Ports.*[*].HostIp"
+    - jsonpath: "$.NetworkSettings.Ports.*[*].HostPort"
+  separator: ":"
+  regex: "^0\\.0\\.0\\.0:.*"
+include_match_in_description: true
+message: "Exposed port found"
+fix: |
+  Bind ports to specific interfaces when possible.

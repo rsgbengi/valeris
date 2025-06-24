@@ -1,0 +1,11 @@
+id: uts_mode
+name: "Host UTS Mode Checker"
+target: docker_runtime
+severity: MEDIUM
+description: Detects sharing of the host UTS namespace.
+match:
+  jsonpath: "$.HostConfig.UtsMode"
+  equals: "host"
+message: "Container is using host UTS mode"
+fix: |
+  Configure a private UTS namespace for the container.

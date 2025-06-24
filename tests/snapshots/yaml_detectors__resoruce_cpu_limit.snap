@@ -1,0 +1,11 @@
+---
+source: tests/yaml_detectors.rs
+expression: findings
+---
+[
+  {
+    "kind": "resource_limits_cpu",
+    "description": "CPU limit not set",
+    "risk": "Medium"
+  }
+]

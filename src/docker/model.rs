@@ -1,14 +1,15 @@
 use bollard::secret::ContainerInspectResponse;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Clone)]
+
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub struct Finding {
     pub kind: String,
     pub description: String,
     pub risk: RiskLevel,
 }
 
-#[derive(Debug, Serialize, Clone, PartialEq, Eq)]
+#[derive(Debug, Serialize,Deserialize, Clone, PartialEq, Eq)]
 pub enum RiskLevel {
     Informative,
     Low,

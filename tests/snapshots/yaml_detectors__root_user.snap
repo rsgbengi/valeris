@@ -1,0 +1,11 @@
+---
+source: tests/yaml_detectors.rs
+expression: findings
+---
+[
+  {
+    "kind": "root_user",
+    "description": "Container is running as root",
+    "risk": "High"
+  }
+]

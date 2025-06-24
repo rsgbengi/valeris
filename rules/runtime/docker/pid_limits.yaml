@@ -1,0 +1,11 @@
+id: pids_limit
+name: "PIDs Limit Checker"
+target: docker_runtime
+severity: MEDIUM
+description: Ensures a maximum number of processes is configured.
+match:
+  jsonpath: "$.HostConfig.PidsLimit"
+  equals: 0
+message: "PIDs limit not set"
+fix: |
+  Specify --pids-limit or relevant ulimits to prevent fork bombs.

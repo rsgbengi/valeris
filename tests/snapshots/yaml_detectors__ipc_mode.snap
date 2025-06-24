@@ -1,0 +1,11 @@
+---
+source: tests/yaml_detectors.rs
+expression: findings
+---
+[
+  {
+    "kind": "ipc_mode",
+    "description": "Container is using host IPC mode",
+    "risk": "Medium"
+  }
+]

@@ -1,0 +1,11 @@
+id: user_namespace
+name: "User Namespace Mode Checker"
+target: docker_runtime
+severity: HIGH
+description: Detects containers running without user namespaces or using host mode.
+match:
+  jsonpath: "$.HostConfig.UsernsMode"
+  regex: "^$|host"
+message: "Container is running without user namespaces"
+fix: |
+  Enable user namespaces to limit privilege escalation.

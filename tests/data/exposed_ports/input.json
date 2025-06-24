@@ -1,0 +1,15 @@
+{
+  "NetworkSettings": {
+    "Ports": {
+      "5432/tcp": [
+        { "HostIp": "0.0.0.0", "HostPort": "2222" }
+      ],
+      "6379/tcp": [
+        { "HostIp": "0.0.0.0", "HostPort": "6379" }
+      ],
+      "2222/tcp": [
+        { "HostIp": "0.0.0.0", "HostPort": "5432" }
+      ]
+    }
+  }
+}

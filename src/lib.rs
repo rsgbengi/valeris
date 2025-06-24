@@ -1,33 +1,38 @@
 pub mod cli;
 
-mod docker;
-mod plugins;
+pub mod docker;          
+mod detectors;       
+pub mod yaml_rules;
 
-use crate::plugins::PluginTarget;
+use std::path::{Path, PathBuf};
+
+use anyhow::Result;
 use clap::Parser;
 use cli::{Cli, Commands, ScanTarget};
 use docker::exporters::export_findings_grouped;
 use docker::printer::print_container_report;
-use docker::scanner::scan_docker_with_plugins;
-use plugins::load_plugins_for_target;
+use detectors::docker::{
+    scan_docker_with_yaml_detectors,
+}; 
+use yaml_rules::YamlRuleEngine;        
 
-pub fn list_plugins(filter_target: PluginTarget) {
-    let plugins = load_plugins_for_target(filter_target);
-
-    println!("Available Plugins:");
-
-    for plugin in plugins {
-        let target_str = match plugin.target() {
-            PluginTarget::Docker => "Docker",
-            PluginTarget::Kubernetes => "Kubernetes",
-            PluginTarget::Both => "Both",
-        };
-
-        println!("- [{}] {} - {}", target_str, plugin.id(), plugin.name());
+// ────────────────────────────────────────────────────────────────────
+// LIST YAML DETECTORS
+// ────────────────────────────────────────────────────────────────────
+fn list_detectors(rules_dir: &Path) -> Result<()> {
+    let engine = YamlRuleEngine::from_dir(rules_dir)?;
+    println!("Available YAML detectors ({}):", rules_dir.display());
+    for r in engine.rules() {
+        let name = r.name.as_deref().unwrap_or("");
+        println!("- [{}] {} {}", r.id, name, r.target.as_deref().unwrap_or(""));
     }
+    Ok(())
 }
 
-pub async fn run_with_args<I, T>(args: I) -> anyhow::Result<()>
+// ────────────────────────────────────────────────────────────────────
+// CLI entry-point
+// ────────────────────────────────────────────────────────────────────
+pub async fn run_with_args<I, T>(args: I) -> Result<()>
 where
     I: IntoIterator<Item = T>,
     T: Into<std::ffi::OsString> + Clone,
@@ -35,6 +40,9 @@ where
     let cli = Cli::parse_from(args);
 
     match cli.command {
+        // -----------------------------------------------------------
+        //     scan
+        // -----------------------------------------------------------
         Commands::Scan {
             target,
             only,
@@ -43,13 +51,19 @@ where
             format,
             output,
         } => {
-            let target = match target {
-                ScanTarget::Docker => PluginTarget::Docker,
-                ScanTarget::K8s => PluginTarget::Kubernetes,
-                ScanTarget::Both => PluginTarget::Both,
+            let rules_dir = match target {
+                ScanTarget::Docker => PathBuf::from("rules/runtime/docker"),
+                ScanTarget::K8s    => PathBuf::from("detectors/k8s"),
+                ScanTarget::Both   => PathBuf::from("detectors"), 
             };
 
-            let results = scan_docker_with_plugins(target, only, exclude, state).await?;
+            let results = scan_docker_with_yaml_detectors(
+                rules_dir,
+                only,
+                exclude,
+                state,
+            )
+            .await?;
 
             if output.is_some() {
                 export_findings_grouped(&results, &format, &output);
@@ -60,14 +74,17 @@ where
             }
         }
 
+        // -----------------------------------------------------------
+        //     list-detectors
+        // -----------------------------------------------------------
         Commands::ListPlugins { target } => {
-            let plugin_target = match target {
-                Some(ScanTarget::Docker) => PluginTarget::Docker,
-                Some(ScanTarget::K8s) => PluginTarget::Kubernetes,
-                Some(ScanTarget::Both) | None => PluginTarget::Both,
+            let rules_dir = match target {
+                Some(ScanTarget::Docker) => PathBuf::from("rules/runtime/docker"),
+                Some(ScanTarget::K8s)    => PathBuf::from("detectors/k8s"),
+                Some(ScanTarget::Both) | None => PathBuf::from("rules/runtime/docker"),
             };
-
-            crate::list_plugins(plugin_target);
+            println!("Rules directory: {}", rules_dir.display());
+            list_detectors(&rules_dir)?;
         }
     }
 

@@ -1,0 +1,12 @@
+id: mounts
+name: "Sensitive Mounts Checker"
+target: docker_runtime
+severity: HIGH
+description: Detects mounts of sensitive host paths such as /var/run/docker.sock, /proc, /sys, /etc or /root.
+match:
+  jsonpath: "$.Mounts[*].Source"
+  regex: "/var/run/docker.sock|/proc|/sys|/etc|/root"
+include_match_in_description: true
+message: "Container mounts a sensitive host path"
+fix: |
+  Avoid mounting host paths that expose the host to the container.

@@ -1,0 +1,11 @@
+---
+source: tests/yaml_detectors.rs
+expression: findings
+---
+[
+  {
+    "kind": "user_namespace",
+    "description": "Container is running without user namespaces",
+    "risk": "High"
+  }
+]

@@ -1,0 +1,12 @@
+id: capabilities
+name: "Linux Capabilities Checker"
+target: docker_runtime
+severity: HIGH
+description: Checks added Linux capabilities such as SYS_ADMIN, NET_ADMIN, etc.
+match:
+  jsonpath: "$.HostConfig.CapAdd[*]"
+  regex: "SYS_ADMIN|ALL|NET_ADMIN|SYS_MODULE|SYS_PTRACE"
+include_match_in_description: true
+message: "Container has high-risk capabilities added"
+fix: |
+  Drop unnecessary capabilities using the --cap-drop flag.

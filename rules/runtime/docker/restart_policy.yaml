@@ -1,0 +1,11 @@
+id: restart_policy
+name: "Restart Policy Checker"
+target: docker_runtime
+severity: MEDIUM
+description: Detects containers without a restart policy.
+match:
+  jsonpath: "$.HostConfig.RestartPolicy.name"
+  equals: null
+message: "No restart policy defined"
+fix: |
+  Configure a restart policy such as \"always\" or \"on-failure\".

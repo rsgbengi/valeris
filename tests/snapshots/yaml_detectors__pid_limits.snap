@@ -1,0 +1,11 @@
+---
+source: tests/yaml_detectors.rs
+expression: findings
+---
+[
+  {
+    "kind": "pids_limit",
+    "description": "PIDs limit not set",
+    "risk": "Medium"
+  }
+]

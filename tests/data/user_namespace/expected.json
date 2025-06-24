@@ -1,0 +1,7 @@
+[
+  {
+    "kind": "user_namespace",
+    "description": "Container is running without user namespaces",
+    "risk": "High"
+  }
+]

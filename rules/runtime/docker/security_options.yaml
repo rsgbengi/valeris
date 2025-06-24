@@ -1,0 +1,8 @@
+id: security_options
+name: "Security Options Analyzer"
+severity: HIGH
+match:
+  jsonpath: "$.HostConfig.SecurityOpt[*]"
+  regex: "(?i)unconfined"          
+include_match_in_description: false   
+message: "Security option is set to an unconfined profile"

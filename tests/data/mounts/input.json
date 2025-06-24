@@ -1,0 +1,7 @@
+{
+  "Mounts": [
+    { "Source": "/var/run/docker.sock" },
+    { "Source": "/data" },
+    { "Source": "/etc" }
+  ]
+}

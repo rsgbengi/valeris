@@ -1,0 +1,12 @@
+[
+  {
+    "kind": "mounts",
+    "description": "Container mounts a sensitive host path: /var/run/docker.sock",
+    "risk": "High"
+  },
+  {
+    "kind": "mounts",
+    "description": "Container mounts a sensitive host path: /etc",
+    "risk": "High"
+  }
+]

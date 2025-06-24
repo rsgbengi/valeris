@@ -1,0 +1,10 @@
+{
+  "Config": {
+    "Env": [
+      "DB_PASSWORD=supersecret",
+      "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+      "JWT_SECRET=xyz",
+      "NODE_ENV=production"
+    ]
+  }
+}

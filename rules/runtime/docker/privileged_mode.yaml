@@ -1,0 +1,11 @@
+id: privileged_mode
+name: "Privileged Mode (YAML)"
+target: docker_runtime
+severity: HIGH
+description: Detect containers running in privileged mode.
+match:
+  jsonpath: "$.HostConfig.Privileged"
+  equals: "true"
+message: "Container is running in privileged mode"
+fix: |
+  Avoid using privileged mode.

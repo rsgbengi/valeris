@@ -1,0 +1,11 @@
+---
+source: tests/yaml_detectors.rs
+expression: findings
+---
+[
+  {
+    "kind": "pid_mode",
+    "description": "Container is using host PID mode",
+    "risk": "Informative"
+  }
+]

@@ -1,0 +1,11 @@
+id: network
+name: "Host Network Mode Checker"
+target: docker_runtime
+severity: HIGH
+description: Detects containers using host network mode.
+match:
+  jsonpath: "$.HostConfig.NetworkMode"
+  equals: "host"
+message: "Container is using host network mode"
+fix: |
+  Run containers with bridge or other isolated network modes.
