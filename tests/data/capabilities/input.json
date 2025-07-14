@@ -1,8 +1,8 @@
 {
   "HostConfig": {
     "CapAdd": [
-      "SYS_ADMIN",
-      "NET_ADMIN"
+      "CAP_SYS_ADMIN",
+      "CAP_NET_ADMIN"
     ]
   }
 }

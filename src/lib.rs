@@ -3,12 +3,15 @@ pub mod cli;
 pub mod docker;          
 mod detectors;       
 pub mod yaml_rules;
+mod rules;
 
-use std::path::{Path, PathBuf};
+use std::path::Path;
+
+use rules::ensure_rules;
 
 use anyhow::Result;
 use clap::Parser;
-use cli::{Cli, Commands, ScanTarget};
+use cli::{Cli, Commands};
 use docker::exporters::export_findings_grouped;
 use docker::printer::print_container_report;
 use detectors::docker::{
@@ -29,9 +32,7 @@ fn list_detectors(rules_dir: &Path) -> Result<()> {
     Ok(())
 }
 
-// ────────────────────────────────────────────────────────────────────
-// CLI entry-point
-// ────────────────────────────────────────────────────────────────────
+
 pub async fn run_with_args<I, T>(args: I) -> Result<()>
 where
     I: IntoIterator<Item = T>,
@@ -40,23 +41,16 @@ where
     let cli = Cli::parse_from(args);
 
     match cli.command {
-        // -----------------------------------------------------------
-        //     scan
-        // -----------------------------------------------------------
         Commands::Scan {
-            target,
+            target: _target,          
             only,
             exclude,
             state,
             format,
             output,
         } => {
-            let rules_dir = match target {
-                ScanTarget::Docker => PathBuf::from("rules/runtime/docker"),
-                ScanTarget::K8s    => PathBuf::from("detectors/k8s"),
-                ScanTarget::Both   => PathBuf::from("detectors"), 
-            };
-
+            let rules_dir = tokio::task::spawn_blocking(|| ensure_rules())
+    .await??;   
             let results = scan_docker_with_yaml_detectors(
                 rules_dir,
                 only,
@@ -74,19 +68,11 @@ where
             }
         }
 
-        // -----------------------------------------------------------
-        //     list-detectors
-        // -----------------------------------------------------------
-        Commands::ListPlugins { target } => {
-            let rules_dir = match target {
-                Some(ScanTarget::Docker) => PathBuf::from("rules/runtime/docker"),
-                Some(ScanTarget::K8s)    => PathBuf::from("detectors/k8s"),
-                Some(ScanTarget::Both) | None => PathBuf::from("rules/runtime/docker"),
-            };
-            println!("Rules directory: {}", rules_dir.display());
+        Commands::ListPlugins { .. } => {
+            let rules_dir = ensure_rules()?;   
             list_detectors(&rules_dir)?;
         }
     }
-
     Ok(())
 }
+

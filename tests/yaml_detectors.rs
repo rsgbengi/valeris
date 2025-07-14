@@ -1,12 +1,3 @@
-//! Integration tests for YAML detectors using `insta` snapshots.
-//!
-//! Coloca este archivo en `tests/yaml_detectors.rs`.
-//!
-//! Cada archivo JSON dentro de `tests/data/` se tomará como caso de prueba.
-//! Si existe un fichero `tests/data/<nombre>.expected.json`, se usará para
-//! comparación tradicional.  Si no existe, el test dependerá únicamente del
-//! snapshot generado/validado por `insta`.
-
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -17,31 +8,26 @@ use walkdir::WalkDir;
 use valeris::docker::model::Finding;
 use valeris::yaml_rules::YamlRuleEngine;
 
-/// Directorio donde residen las reglas YAML de Docker.
-const DETECTOR_DIR: &str = "rules/runtime/docker";
-/// Directorio con los ficheros JSON de entrada de pruebas.
+const DETECTOR_DIR: &str = "rules/runtime";
 const TEST_DATA_DIR: &str = "tests/data";
 
-/// Instancia preparada del motor de reglas.
 fn engine() -> YamlRuleEngine {
     YamlRuleEngine::from_dir(Path::new(DETECTOR_DIR)).expect("cannot load detectors")
 }
 
-/// Lee y deserializa un archivo JSON.
 fn read_json<P: AsRef<Path>>(p: P) -> Result<Value> {
     Ok(serde_json::from_str(&fs::read_to_string(&p)?)?)
 }
 
-/// Reúne cada caso de prueba (id, input.json, expected.json)
 fn test_cases() -> Vec<(String, PathBuf, PathBuf)> {
     WalkDir::new(TEST_DATA_DIR)
-        .min_depth(1)                 // solo subdirectorios directos
+        .min_depth(1)                 
         .max_depth(1)
         .into_iter()
         .filter_map(|e| {
             let dir = e.ok()?;
             if !dir.file_type().is_dir() {
-                return None;           // saltar ficheros sueltos
+                return None;           
             }
             let name = dir.file_name().to_string_lossy().into_owned();
             let input     = dir.path().join("input.json");
@@ -49,21 +35,17 @@ fn test_cases() -> Vec<(String, PathBuf, PathBuf)> {
             if input.exists() {
                 Some((name, input, expected))
             } else {
-                None                   // carpeta sin input.json -> ignorar
+                None                   
             }
         })
         .collect()
 }
 
 
-// -----------------------------------------------------------------------------
-// Test clásico contra un archivo expected.json (opcional)
-// -----------------------------------------------------------------------------
 #[test]
 fn yaml_detector_cases_pass() -> Result<()> {
     let engine = engine();
     for (name, input_path, expected_path) in test_cases() {
-        // imprime el ID y (si existe) el nombre de la regla
         if let Some(rule) = engine.rules().iter().find(|r| r.id == name) {
             let title = rule.name.as_deref().unwrap_or("");
             println!("▶  Testing YAML '{}' – {}", rule.id, title);
@@ -76,8 +58,8 @@ fn yaml_detector_cases_pass() -> Result<()> {
         }
         let input =
             read_json(&input_path).with_context(|| format!("reading input for case '{name}'"))?;
-
         let mut got = engine.scan_value(&input);
+        println!("  - found {} findings", got.len());
 
         let expected: Vec<Finding> = serde_json::from_value(read_json(&expected_path)?)?;
 
@@ -90,9 +72,7 @@ fn yaml_detector_cases_pass() -> Result<()> {
     Ok(())
 }
 
-// -----------------------------------------------------------------------------
-// Snapshot con `insta`
-// -----------------------------------------------------------------------------
+
 #[test]
 fn insta_snapshots() {
     let engine = engine();
@@ -105,9 +85,6 @@ fn insta_snapshots() {
     }
 }
 
-// -----------------------------------------------------------------------------
-// Sanidad del catálogo: ids únicos y severities válidas
-// -----------------------------------------------------------------------------
 #[test]
 fn yaml_catalog_is_consistent() -> Result<()> {
     let engine = engine();

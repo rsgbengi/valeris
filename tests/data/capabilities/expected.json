@@ -1,12 +1,12 @@
 [
   {
     "kind": "capabilities",
-    "description": "Container has high-risk capabilities added: SYS_ADMIN",
+    "description": "Container has high-risk capabilities added: CAP_SYS_ADMIN",
     "risk": "High"
   },
   {
     "kind": "capabilities",
-    "description": "Container has high-risk capabilities added: NET_ADMIN",
+    "description": "Container has high-risk capabilities added: CAP_NET_ADMIN",
     "risk": "High"
   }
 ]

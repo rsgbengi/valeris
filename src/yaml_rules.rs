@@ -56,22 +56,27 @@ impl YamlRuleEngine {
         &self.rules
     }
     // ------------ Rule Loader --------------------------------------
-    pub fn from_dir(dir: &Path) -> Result<Self> {
-        let mut rules = Vec::new();
-        if dir.exists() {
-            for entry in fs::read_dir(dir)? {
-                let path = entry?.path();
-                if path.extension().and_then(|e| e.to_str()) == Some("yaml") {
-                    let contents = fs::read_to_string(&path)
-                        .with_context(|| format!("reading {}", path.display()))?;
-                    let rule: YamlRule = serde_yaml::from_str(&contents)
-                        .with_context(|| format!("parsing {}", path.display()))?;
-                    rules.push(rule);
-                }
+    pub fn from_dir(base: &Path) -> Result<Self> {
+    let dir = base.join("docker");
+
+    let mut rules = Vec::new();
+    if dir.exists() {
+        for entry in fs::read_dir(&dir)? {
+            let path = entry?.path();
+            if path.extension().and_then(|e| e.to_str()) == Some("yaml") {
+                let contents = fs::read_to_string(&path)
+                    .with_context(|| format!("reading {}", path.display()))?;
+                let rule: YamlRule = serde_yaml::from_str(&contents)
+                    .with_context(|| format!("parsing {}", path.display()))?;
+                rules.push(rule);
             }
         }
-        Ok(Self { rules })
     }
+    println!("Loaded {} YAML rules from {}", rules.len(), dir.display());
+    Ok(Self { rules })
+}
+
+
 
     // ------------ Public API ------------------------------------------
     pub fn scan_value(&self, value: &Value) -> Vec<Finding> {
