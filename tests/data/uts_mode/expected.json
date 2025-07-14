@@ -1,7 +1,0 @@
-[
-  {
-    "kind": "uts_mode",
-    "description": "Container is using host UTS mode",
-    "risk": "Medium"
-  }
-]

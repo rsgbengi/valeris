@@ -1,7 +1,0 @@
-[
-  {
-    "kind": "security_options",
-    "description": "Security option is set to an unconfined profile",
-    "risk": "High"
-  }
-]

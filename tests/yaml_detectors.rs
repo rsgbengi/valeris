@@ -1,11 +1,10 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use serde_json::Value;
 use walkdir::WalkDir;
 
-use valeris::docker::model::Finding;
 use valeris::yaml_rules::YamlRuleEngine;
 
 const DETECTOR_DIR: &str = "rules/runtime";
@@ -41,38 +40,6 @@ fn test_cases() -> Vec<(String, PathBuf, PathBuf)> {
         .collect()
 }
 
-
-#[test]
-fn yaml_detector_cases_pass() -> Result<()> {
-    let engine = engine();
-    for (name, input_path, expected_path) in test_cases() {
-        if let Some(rule) = engine.rules().iter().find(|r| r.id == name) {
-            let title = rule.name.as_deref().unwrap_or("");
-            println!("▶  Testing YAML '{}' – {}", rule.id, title);
-        } else {
-            println!("▶  Testing YAML '{}'", name);
-        }
-
-        if !expected_path.exists() {
-            continue;
-        }
-        let input =
-            read_json(&input_path).with_context(|| format!("reading input for case '{name}'"))?;
-        let mut got = engine.scan_value(&input);
-        println!("  - found {} findings", got.len());
-
-        let expected: Vec<Finding> = serde_json::from_value(read_json(&expected_path)?)?;
-
-        got.sort_by(|a, b| a.kind.cmp(&b.kind));
-        let mut exp = expected;
-        exp.sort_by(|a, b| a.kind.cmp(&b.kind));
-
-        assert_eq!(got, exp, "case '{name}' mismatch");
-    }
-    Ok(())
-}
-
-
 #[test]
 fn insta_snapshots() {
     let engine = engine();
@@ -81,7 +48,9 @@ fn insta_snapshots() {
         let input = read_json(&input_path).expect("read json input");
         let findings = engine.scan_value(&input);
 
-        insta::assert_json_snapshot!(name, findings);
+        insta::with_settings!({snapshot_path => "snapshots"}, {
+            insta::assert_json_snapshot!(name, findings);
+        });
     }
 }
 

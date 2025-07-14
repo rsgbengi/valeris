@@ -1,7 +1,0 @@
-[
-  {
-    "kind": "privileged_mode",
-    "description": "Container is running in privileged mode",
-    "risk": "High"
-  }
-]

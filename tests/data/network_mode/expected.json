@@ -1,7 +1,0 @@
-[
-  {
-    "kind": "network",
-    "description": "Container is using host network mode",
-    "risk": "High"
-  }
-]

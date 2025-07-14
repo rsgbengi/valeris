@@ -1,7 +1,0 @@
-[
-  {
-    "kind": "readonly_rootfs",
-    "description": "Container is running in read-only mode",
-    "risk": "Informative"
-  }
-]

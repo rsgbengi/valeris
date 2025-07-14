@@ -1,7 +1,0 @@
-[
-  {
-    "kind": "pid_mode",
-    "description": "Container is using host PID mode",
-    "risk": "Informative"
-  }
-]
