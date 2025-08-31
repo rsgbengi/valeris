@@ -203,3 +203,75 @@ fn to_finding(rule: &YamlRule, mv: &str, risk: RiskLevel) -> Finding {
         risk,
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tempfile;
+
+    #[test]
+    fn matcher_matches_with_equals() {
+        let matcher = RuleMatcher {
+            parts: None,
+            separator: None,
+            equals: Some("abc".to_string()),
+            regex: None,
+            jsonpath: None,
+        };
+        assert!(matcher_matches("abc", &matcher));
+        assert!(!matcher_matches("abcd", &matcher));
+    }
+
+    #[test]
+    fn matcher_matches_with_regex() {
+        let matcher = RuleMatcher {
+            parts: None,
+            separator: None,
+            equals: None,
+            regex: Some("^foo.*".to_string()),
+            jsonpath: None,
+        };
+        assert!(matcher_matches("foobar", &matcher));
+        assert!(!matcher_matches("bar", &matcher));
+    }
+
+    #[test]
+    fn risk_from_severity_unknown_defaults_medium() {
+        assert_eq!(risk_from_severity(Some("CUSTOM")), RiskLevel::Medium);
+        assert_eq!(risk_from_severity(None), RiskLevel::Medium);
+        assert_eq!(risk_from_severity(Some("low")), RiskLevel::Low);
+    }
+
+    #[test]
+    fn to_finding_includes_match_when_flag_set() {
+        let rule = YamlRule {
+            id: "ID".into(),
+            name: None,
+            target: None,
+            severity: Some("info".into()),
+            description: None,
+            references: vec![],
+            matcher: RuleMatcher {
+                parts: None,
+                separator: None,
+                equals: None,
+                regex: None,
+                jsonpath: None,
+            },
+            message: "found {{match}}".into(),
+            fix: None,
+            include_match_in_description: true,
+        };
+
+        let finding = to_finding(&rule, "VALUE", RiskLevel::Informative);
+        assert_eq!(finding.kind, "ID");
+        assert!(finding.description.contains("VALUE"));
+    }
+
+    #[test]
+    fn from_dir_empty_directory_returns_no_rules() {
+        let dir = tempfile::tempdir().unwrap();
+        let engine = YamlRuleEngine::from_dir(dir.path()).unwrap();
+        assert_eq!(engine.rules().len(), 0);
+    }
+}

@@ -82,7 +82,6 @@ fn run_detectors_on_container(
 }
 
 
-
 fn parse_id_set(input: &Option<String>) -> Option<HashSet<String>> {
     input.as_ref().map(|s| {
         s.split(',')
@@ -109,7 +108,6 @@ fn validate_ids(available: &HashSet<String>, provided: &Option<HashSet<String>>,
     }
     Ok(())
 }
-
 
 
 async fn get_containers(state_filter: Option<&HashSet<String>>) -> Result<Vec<ContainerInspectResponse>> {
@@ -141,4 +139,35 @@ async fn get_containers(state_filter: Option<&HashSet<String>>) -> Result<Vec<Co
     }
 
     Ok(result)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parse_id_set_normalizes_and_deduplicates() {
+        let input = Some("FOO, bar , foo".to_string());
+        let set = parse_id_set(&input).expect("some set");
+        assert_eq!(set.len(), 2);
+        assert!(set.contains("foo"));
+        assert!(set.contains("bar"));
+    }
+
+    #[test]
+    fn parse_state_set_handles_spaces() {
+        let input = Some("Running , Exited".to_string());
+        let set = parse_state_set(&input).expect("some set");
+        assert!(set.contains("running"));
+        assert!(set.contains("exited"));
+        assert_eq!(set.len(), 2);
+    }
+
+    #[test]
+    fn validate_ids_errors_on_unknown() {
+        let available: HashSet<String> = ["a", "b"].iter().map(|s| s.to_string()).collect();
+        let provided: Option<HashSet<String>> = Some(["b", "c"].iter().map(|s| s.to_string()).collect());
+        let result = validate_ids(&available, &provided, "--only");
+        assert!(result.is_err());
+    }
 }

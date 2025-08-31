@@ -55,3 +55,33 @@ fn download_and_extract(target_dir: &Path) -> Result<()> {
     Archive::new(gz).unpack(target_dir)?;
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tempfile::tempdir;
+    use serial_test::serial;
+
+    #[test]
+    #[serial]
+    fn rules_dir_uses_env_var() {
+        std::env::set_var("VALERIS_RULES_DIR", "/tmp/valeris_test");
+        let dir = rules_dir().unwrap();
+        assert_eq!(dir, PathBuf::from("/tmp/valeris_test"));
+        std::env::remove_var("VALERIS_RULES_DIR");
+    }
+
+    #[test]
+    #[serial]
+    fn ensure_rules_skips_download_if_present() {
+        let td = tempdir().unwrap();
+        let dir = td.path();
+        std::env::set_var("VALERIS_RULES_DIR", dir);
+        fs::create_dir_all(dir.join("docker")).unwrap();
+        fs::write(dir.join(".valeris_version"), "installed").unwrap();
+
+        let res = ensure_rules().unwrap();
+        assert_eq!(res, dir);
+        std::env::remove_var("VALERIS_RULES_DIR");
+    }
+}
