@@ -6,6 +6,13 @@ on:
   pull_request:
     branches: [ "master" ]
 
+permissions:
+  contents: read
+
+concurrency:
+  group: rust-ci-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   CARGO_TERM_COLOR: always
   INSTA_UPDATE: no
@@ -13,53 +20,51 @@ env:
 jobs:
   build-test:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
+      # Checkout repo
       - uses: actions/checkout@v4
 
-      # ---------- Cache ----------------------------------------------------
-      - name: Cache cargo registry + build
-        uses: actions/cache@v4
+      # Cache Cargo registry, git deps, and target directory
+      - uses: Swatinem/rust-cache@v2
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-
+          save-if: ${{ github.ref == 'refs/heads/master' || github.event_name == 'push' }}
 
-      # ---------- Toolchain ------------------------------------------------
+      # Install Rust toolchain with required components
       - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: stable
-          profile: minimal
-          override: true
+          components: clippy,rustfmt
 
-      # ---------- System deps for Tarpaulin -------------------------------
+      # Install system dependencies (needed by crates like openssl)
       - name: Install system libraries
         run: sudo apt-get update && sudo apt-get install -y libssl-dev pkg-config
 
+      # Install Tarpaulin (use semver range ^0.27)
       - name: Install Tarpaulin
-        run: cargo install cargo-tarpaulin --version 0.27
+        run: cargo install cargo-tarpaulin --version ^0.27 --locked
 
-      # ---------- Build & Lints -------------------------------------------
+      # Build project (workspace + all features)
       - name: Build
-        run: cargo build --all-features --verbose
+        run: cargo build --workspace --all-features --verbose --locked
 
+      # Run Clippy and deny warnings
       - name: Run Clippy (deny warnings)
-        run: cargo clippy --all-targets --all-features -- -D warnings
+        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
 
-      # ---------- Tests ----------------------------------------------------
+      # Run tests
       - name: Run tests
-        run: cargo test --all --verbose -- --nocapture
+        run: cargo test --workspace --verbose --locked -- --nocapture
 
-      # ---------- Coverage (fails if < 80 %) -------------------------------
+      # Run coverage only on push to master
       - name: Coverage
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
         run: cargo tarpaulin --fail-under 80 --out Xml
 
-      # ---------- Upload artefacts -----------------------------------------
+      # Upload coverage report as artifact
       - name: Upload coverage report
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
         uses: actions/upload-artifact@v4
         with:
           name: coverage-xml
