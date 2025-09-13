@@ -1,9 +1,9 @@
 pub mod cli;
 
-pub mod docker;          
-mod detectors;       
-pub mod yaml_rules;
+mod detectors;
+pub mod docker;
 mod rules;
+pub mod yaml_rules;
 
 use std::path::Path;
 
@@ -12,12 +12,11 @@ use rules::ensure_rules;
 use anyhow::Result;
 use clap::Parser;
 use cli::{Cli, Commands};
+use detectors::docker::scan_docker_with_yaml_detectors;
+use detectors::docker_file_parser::scan_dockerfile;
 use docker::exporters::export_findings_grouped;
 use docker::printer::print_container_report;
-use detectors::docker::{
-    scan_docker_with_yaml_detectors,
-}; 
-use yaml_rules::YamlRuleEngine;        
+use yaml_rules::YamlRuleEngine;
 
 // ────────────────────────────────────────────────────────────────────
 // LIST YAML DETECTORS
@@ -27,11 +26,15 @@ fn list_detectors(rules_dir: &Path) -> Result<()> {
     println!("Available YAML detectors ({}):", rules_dir.display());
     for r in engine.rules() {
         let name = r.name.as_deref().unwrap_or("");
-        println!("- [{}] {} {}", r.id, name, r.target.as_deref().unwrap_or(""));
+        println!(
+            "- [{}] {} {}",
+            r.id,
+            name,
+            r.target.as_deref().unwrap_or("")
+        );
     }
     Ok(())
 }
-
 
 pub async fn run_with_args<I, T>(args: I) -> Result<()>
 where
@@ -42,22 +45,15 @@ where
 
     match cli.command {
         Commands::Scan {
-            target: _target,          
+            target: _target,
             only,
             exclude,
             state,
             format,
             output,
         } => {
-            let rules_dir = tokio::task::spawn_blocking(|| ensure_rules())
-    .await??;   
-            let results = scan_docker_with_yaml_detectors(
-                rules_dir,
-                only,
-                exclude,
-                state,
-            )
-            .await?;
+            let rules_dir = tokio::task::spawn_blocking(ensure_rules).await??;
+            let results = scan_docker_with_yaml_detectors(rules_dir, only, exclude, state).await?;
 
             if output.is_some() {
                 export_findings_grouped(&results, &format, &output);
@@ -68,11 +64,23 @@ where
             }
         }
 
+        Commands::DockerFile {
+            path,
+            only: _,
+            exclude: _,
+            format: _,
+            output: _,
+        } => {
+            match scan_dockerfile(path) {
+                Ok(_) => println!("Dockerfile processed successfully"),
+                Err(e) => eprintln!("Error: {e:?}"),
+            }
+        }
+
         Commands::ListPlugins { .. } => {
-            let rules_dir = ensure_rules()?;   
+            let rules_dir = ensure_rules()?;
             list_detectors(&rules_dir)?;
         }
     }
     Ok(())
 }
-

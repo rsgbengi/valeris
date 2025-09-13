@@ -1,5 +1,5 @@
 id: root_user
-name: "Root User (YAML)"
+name: "Root User"
 target: docker_runtime
 severity: HIGH
 description: Detect containers running as root.

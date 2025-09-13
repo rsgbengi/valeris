@@ -1,4 +1,5 @@
 use clap::{Parser, Subcommand, ValueEnum};
+use std::path::PathBuf;
 
 #[derive(Parser)]
 #[command(name = "valeris", version = "0.1", author = "rsgbengi")]
@@ -56,6 +57,43 @@ pub enum Commands {
         )]
         format: OutputFormat,
 
+        #[arg(
+            long,
+            help = "Write output to a file instead of stdout (e.g. --output findings.json)"
+        )]
+        output: Option<String>,
+    },
+
+    #[command(about = "Scan Dockerfile for misconfigurations")]
+    DockerFile {
+        #[arg(long, help = "Path to the Dockerfile")]
+        path: PathBuf,
+
+        #[allow(dead_code)]
+        #[arg(
+            long,
+            help = "Run only the specified plugin(s), comma-separated"
+        )]
+        only: Option<String>,
+
+        #[allow(dead_code)]
+        #[arg(
+            long,
+            help = "Exclude the specified plugin(s), comma-separated"
+        )]
+        exclude: Option<String>,
+
+        #[allow(dead_code)]
+        #[arg(
+            long,
+            value_enum,
+            default_value = "json",
+            requires = "output",
+            help = "Format of the output: json or csv"
+        )]
+        format: OutputFormat,
+
+        #[allow(dead_code)]
         #[arg(
             long,
             help = "Write output to a file instead of stdout (e.g. --output findings.json)"
