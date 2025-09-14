@@ -1,2 +1,2 @@
-pub mod docker;
-pub mod docker_file_parser;
+pub mod runtime;
+pub mod dockerfile;

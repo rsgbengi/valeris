@@ -1,9 +1,9 @@
 pub mod cli;
 
-mod detectors;
+pub mod detectors;
 pub mod docker;
 mod rules;
-pub mod yaml_rules;
+use detectors::runtime::yaml_rules::YamlRuleEngine;
 
 use std::path::Path;
 
@@ -12,11 +12,10 @@ use rules::ensure_rules;
 use anyhow::Result;
 use clap::Parser;
 use cli::{Cli, Commands};
-use detectors::docker::scan_docker_with_yaml_detectors;
-use detectors::docker_file_parser::scan_dockerfile;
+use detectors::runtime::scanner::scan_docker_with_yaml_detectors;
+use detectors::dockerfile::scanner::scan_dockerfile;
 use docker::exporters::export_findings_grouped;
 use docker::printer::print_container_report;
-use yaml_rules::YamlRuleEngine;
 
 // ────────────────────────────────────────────────────────────────────
 // LIST YAML DETECTORS

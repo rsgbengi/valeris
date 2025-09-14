@@ -10,8 +10,9 @@ use serde_json::to_value;
 
 use crate::{
     docker::model::{ContainerResult, Finding},
-    yaml_rules::{YamlRuleEngine},       
 };
+
+use crate::YamlRuleEngine;
 
 
 

@@ -5,7 +5,7 @@ use anyhow::Result;
 use serde_json::Value;
 use walkdir::WalkDir;
 
-use valeris::yaml_rules::YamlRuleEngine;
+use valeris::detectors::runtime::yaml_rules::YamlRuleEngine;
 
 const DETECTOR_DIR: &str = "rules/runtime";
 const TEST_DATA_DIR: &str = "tests/data";
