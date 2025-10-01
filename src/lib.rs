@@ -65,13 +65,17 @@ where
 
         Commands::DockerFile {
             path,
-            only: _,
-            exclude: _,
-            format: _,
-            output: _,
+            rules,
+            format,
+            output,
         } => {
-            match scan_dockerfile(path) {
-                Ok(_) => println!("Dockerfile processed successfully"),
+            let is_table = matches!(format, cli::OutputFormat::Table);
+            match scan_dockerfile(path, rules, format, output) {
+                Ok(_) => {
+                    if is_table {
+                        println!("Dockerfile processed successfully");
+                    }
+                }
                 Err(e) => eprintln!("Error: {e:?}"),
             }
         }

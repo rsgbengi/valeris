@@ -7,6 +7,8 @@ pub struct Finding {
     pub kind: String,
     pub description: String,
     pub risk: RiskLevel,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub line: Option<usize>,
 }
 
 #[derive(Debug, Serialize,Deserialize, Clone, PartialEq, Eq)]

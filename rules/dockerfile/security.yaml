@@ -1,0 +1,79 @@
+version: 1
+rules:
+  - id: DF002
+    name: Root user detected
+    scope: instruction
+    kind: USER
+    match:
+      field: user
+      equals: root
+    severity: high
+    message: "Container runs as root user"
+    remediation: "Use a non-root user: USER nonroot"
+    tags: [security]
+
+  - id: DF003
+    name: Sensitive port exposed
+    scope: instruction
+    kind: EXPOSE
+    match:
+      field: port
+      regex: "^(22|3306|5432|6379|27017|9200)(/.*)?$"
+    severity: medium
+    message: "Exposing sensitive port (SSH, database, etc.)"
+    remediation: "Avoid exposing database/SSH ports directly. Use secure tunnels or proxies."
+    tags: [network, security]
+
+  - id: DF004
+    name: Missing non-root user
+    scope: stage
+    when:
+      must_end_non_root: true
+    severity: high
+    message: "Stage does not end with a non-root USER instruction"
+    remediation: "Add USER <non-root-user> before the final instruction"
+    tags: [security]
+
+  - id: DF005
+    name: Using ADD instead of COPY
+    scope: instruction
+    kind: ADD
+    match: {}
+    severity: low
+    message: "ADD instruction used (prefer COPY unless you need tar extraction)"
+    remediation: "Use COPY instead of ADD for simple file copies"
+    tags: [best-practices]
+
+  - id: DF006
+    name: Hardcoded secrets in ENV
+    scope: instruction
+    kind: ENV
+    match:
+      field: env.key
+      regex: "(?i)(password|secret|token|api_?key|auth)"
+    severity: critical
+    message: "Possible hardcoded secret in ENV variable"
+    remediation: "Use Docker secrets or external secret management"
+    tags: [security, secrets]
+
+  - id: DF007
+    name: Missing .dockerignore with COPY .
+    scope: file
+    when:
+      requires_dockerignore_if_copy_dot: true
+    severity: medium
+    message: "COPY . instruction found but no .dockerignore file exists"
+    remediation: "Create a .dockerignore to exclude unnecessary files (e.g., .git, node_modules)"
+    tags: [best-practices, performance]
+
+  - id: DF008
+    name: Shell form used for RUN
+    scope: instruction
+    kind: RUN
+    match:
+      field: command
+      regex: "^[^\\[].*"
+    severity: low
+    message: "RUN uses shell form (can lead to unexpected behavior)"
+    remediation: "Consider using exec form: RUN [\"executable\", \"param1\"]"
+    tags: [best-practices]

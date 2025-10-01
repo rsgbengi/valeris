@@ -14,8 +14,31 @@ pub enum ScanTarget {
     K8s,
     Both,
 }
+/// Output format for scan results.
+///
+/// Determines how scan findings are presented to the user or exported.
+///
+/// # Variants
+///
+/// * `Table` - Human-readable table format with colors (default for interactive use)
+/// * `Json` - Structured JSON format (suitable for CI/CD and programmatic parsing)
+/// * `Csv` - Comma-separated values format (suitable for spreadsheets and data analysis)
+///
+/// # Example
+///
+/// ```bash
+/// # Interactive table view
+/// valeris docker-file --path Dockerfile --rules rules/ --format table
+///
+/// # JSON for CI/CD
+/// valeris docker-file --path Dockerfile --rules rules/ --format json | jq
+///
+/// # CSV for analysis
+/// valeris docker-file --path Dockerfile --rules rules/ --format csv --output report.csv
+/// ```
 #[derive(ValueEnum, Clone, Debug, PartialEq, Eq)]
 pub enum OutputFormat {
+    Table,
     Json,
     Csv,
 }
@@ -69,36 +92,22 @@ pub enum Commands {
         #[arg(long, help = "Path to the Dockerfile")]
         path: PathBuf,
 
-        #[allow(dead_code)]
-        #[arg(
-            long,
-            help = "Run only the specified plugin(s), comma-separated"
-        )]
-        only: Option<String>,
+        #[arg(long, help = "Path to the rules")]
+        rules: PathBuf,
 
-        #[allow(dead_code)]
-        #[arg(
-            long,
-            help = "Exclude the specified plugin(s), comma-separated"
-        )]
-        exclude: Option<String>,
-
-        #[allow(dead_code)]
         #[arg(
             long,
             value_enum,
-            default_value = "json",
-            requires = "output",
-            help = "Format of the output: json or csv"
+            default_value = "table",
+            help = "Output format: table (human-readable), json, or csv"
         )]
         format: OutputFormat,
 
-        #[allow(dead_code)]
         #[arg(
             long,
-            help = "Write output to a file instead of stdout (e.g. --output findings.json)"
+            help = "Write output to a file instead of stdout"
         )]
-        output: Option<String>,
+        output: Option<PathBuf>,
     },
 
     #[command(about = "List all available plugins")]

@@ -1,8 +1,14 @@
 use crate::docker::model::{Finding, RiskLevel};
 use bollard::models::ContainerInspectResponse;
-use colored::*;
+use console::{style, Emoji};
+use comfy_table::{Table, presets::UTF8_FULL, ContentArrangement, Cell, Color, Attribute};
+use std::collections::BTreeMap;
 
 pub fn print_container_report(container: &ContainerInspectResponse, findings: &[Finding]) {
+    static DOCKER: Emoji<'_, '_> = Emoji("🐳 ", "[D] ");
+    static CHECK: Emoji<'_, '_> = Emoji("✅ ", "[OK] ");
+    static WARN: Emoji<'_, '_> = Emoji("⚠️  ", "[!] ");
+
     let name = container
         .name
         .as_deref()
@@ -29,39 +35,95 @@ pub fn print_container_report(container: &ContainerInspectResponse, findings: &[
         "unknown".to_string()
     };
 
-    let status_colored = match state_str.as_str() {
-        "RUNNING" => "Running".green().bold(),
-        "EXITED" => "Exited".red().bold(),
-        "PAUSED" => "Paused".yellow().bold(),
-        "CREATED" => "Created".blue().bold(),
-        _ => state_str.dimmed(),
+    let status_style = match state_str.as_str() {
+        "RUNNING" => style("Running").green().bold().to_string(),
+        "EXITED" => style("Exited").red().bold().to_string(),
+        "PAUSED" => style("Paused").yellow().bold().to_string(),
+        "CREATED" => style("Created").blue().bold().to_string(),
+        _ => style(&state_str).dim().to_string(),
     };
 
-    println!("🔍 Container: {}", name.bold());
-    println!("   └─ Image: {}", image_with_tag);
-    println!("   └─ Status: {}", status_colored);
+    // Header
+    println!("\n{}", style("━".repeat(80)).dim());
+    println!(
+        "{}{} {}",
+        DOCKER,
+        style("Container:").bold().cyan(),
+        style(name).bold().white()
+    );
+    println!("  {} {}", style("Image:").dim(), style(image_with_tag).white());
+    println!("  {} {}", style("Status:").dim(), status_style);
+    println!("{}", style("━".repeat(80)).dim());
 
     if findings.is_empty() {
-        println!("{}", "   ✅ No findings detected.".green());
-    } else {
-        for finding in findings {
-            let prefix = match finding.risk {
-                RiskLevel::High => " [!!] ".red().bold(),
-                RiskLevel::Medium => " [!]  ".yellow().bold(),
-                RiskLevel::Low => " [·]  ".blue(),
-                RiskLevel::Informative => " [i]  ".white(),
-            };
-            println!(
-                "{} {}: {}",
-                prefix,
-                finding.kind.cyan(),
-                finding.description
-            );
-        }
+        println!(
+            "\n  {}{}\n",
+            CHECK,
+            style("No security issues found!").green().bold()
+        );
+        println!("{}\n", style("━".repeat(80)).dim());
+        return;
     }
 
-    println!(
-        "{}",
-        "---------------------------------------------".dimmed()
-    );
+    // Count findings by severity
+    let mut counts: BTreeMap<&str, usize> = BTreeMap::new();
+    for finding in findings {
+        let severity = match finding.risk {
+            RiskLevel::High => "Critical",
+            RiskLevel::Medium => "Medium",
+            RiskLevel::Low => "Low",
+            RiskLevel::Informative => "Info",
+        };
+        *counts.entry(severity).or_insert(0) += 1;
+    }
+
+    // Summary banner
+    let total = findings.len();
+    print!("\n  {}", WARN);
+    print!("{} ", style(format!("{} issues found:", total)).bold().yellow());
+
+    let mut parts = vec![];
+    if let Some(&n) = counts.get("Critical") {
+        parts.push(style(format!("{} critical", n)).red().bold().to_string());
+    }
+    if let Some(&n) = counts.get("Medium") {
+        parts.push(style(format!("{} medium", n)).yellow().to_string());
+    }
+    if let Some(&n) = counts.get("Low") {
+        parts.push(style(format!("{} low", n)).blue().to_string());
+    }
+    if let Some(&n) = counts.get("Info") {
+        parts.push(style(format!("{} info", n)).dim().to_string());
+    }
+
+    println!("{}\n", parts.join(", "));
+
+    // Create findings table
+    let mut table = Table::new();
+    table
+        .load_preset(UTF8_FULL)
+        .set_content_arrangement(ContentArrangement::Dynamic)
+        .set_header(vec![
+            Cell::new("Severity").add_attribute(Attribute::Bold),
+            Cell::new("Rule ID").add_attribute(Attribute::Bold),
+            Cell::new("Description").add_attribute(Attribute::Bold),
+        ]);
+
+    for finding in findings {
+        let (severity_text, severity_color) = match finding.risk {
+            RiskLevel::High => ("CRITICAL", Color::Red),
+            RiskLevel::Medium => ("MEDIUM", Color::Yellow),
+            RiskLevel::Low => ("LOW", Color::Blue),
+            RiskLevel::Informative => ("INFO", Color::White),
+        };
+
+        table.add_row(vec![
+            Cell::new(severity_text).fg(severity_color).add_attribute(Attribute::Bold),
+            Cell::new(&finding.kind).fg(Color::Cyan),
+            Cell::new(&finding.description),
+        ]);
+    }
+
+    println!("{}\n", table);
+    println!("{}\n", style("━".repeat(80)).dim());
 }

@@ -201,6 +201,7 @@ fn to_finding(rule: &YamlRule, mv: &str, risk: RiskLevel) -> Finding {
         kind: rule.id.clone(),
         description: desc,
         risk,
+        line: None,
     }
 }
 

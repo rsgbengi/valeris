@@ -76,6 +76,10 @@ pub fn export_findings_grouped(
     output: &Option<String>,
 ) {
     match format {
+        OutputFormat::Table => {
+            // Table format is handled separately in scan command
+            // This shouldn't be called for Table format
+        }
         OutputFormat::Json => {
             let data = to_exportable_json(results);
             let json = serde_json::to_string_pretty(&data).unwrap();
@@ -126,6 +130,7 @@ mod tests {
             kind: kind.to_string(),
             description: description.to_string(),
             risk,
+            line: None,
         }
     }
 
