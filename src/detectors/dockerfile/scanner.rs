@@ -5,12 +5,13 @@
 
 use anyhow::{Context, anyhow};
 use std::fs::read_to_string;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use dockerfile_parser::{Dockerfile, Instruction};
 
 use crate::detectors::dockerfile::yaml_rules::{self, Rule, Severity};
 use crate::docker::model::{Finding, RiskLevel};
-use crate::detectors::dockerfile::printer::print_dockerfile_report;
+use crate::output::printer::{print_scan_report, ScanContext};
+use crate::output::exporters::{export_scan_results, ScanSource};
 use crate::detectors::dockerfile::matcher::matches_matcher;
 use crate::detectors::dockerfile::instruction_utils::{
     get_instruction_kind,
@@ -18,7 +19,6 @@ use crate::detectors::dockerfile::instruction_utils::{
     get_line_number,
     find_last_user_instruction,
 };
-use crate::detectors::dockerfile::exporters;
 use crate::cli::OutputFormat;
 
 /// Scans a Dockerfile for security issues and misconfigurations.
@@ -92,23 +92,22 @@ fn output_results(
     format: OutputFormat,
     output_file: Option<PathBuf>,
 ) -> anyhow::Result<()> {
-    let output = match format {
+    match format {
         OutputFormat::Table => {
             // Table format goes to stdout
-            print_dockerfile_report(path, findings);
-            return Ok(());
+            print_scan_report(ScanContext::Dockerfile(path), findings);
         }
-        OutputFormat::Json => exporters::to_json(path, findings)?,
-        OutputFormat::Csv => exporters::to_csv(path, findings)?,
-    };
-
-    // Write to file or stdout
-    if let Some(file_path) = output_file {
-        std::fs::write(&file_path, output)
-            .with_context(|| format!("writing output to {}", file_path.display()))?;
-        eprintln!("✓ Output written to {}", file_path.display());
-    } else {
-        println!("{}", output);
+        _ => {
+            // Use unified exporter for JSON and CSV
+            export_scan_results(
+                ScanSource::Dockerfile {
+                    path,
+                    findings,
+                },
+                &format,
+                &output_file.as_ref().map(|p| p.display().to_string()),
+            )?;
+        }
     }
 
     Ok(())
@@ -185,7 +184,7 @@ fn scan_stages(
 fn scan_file(
     dockerfile: &Dockerfile,
     rules: &[Rule],
-    path: &PathBuf,
+    path: &Path,
 ) -> Vec<Finding> {
     check_file_rules(rules, dockerfile, path)
 }
@@ -260,7 +259,7 @@ fn check_stage_rules(
 fn check_file_rules(
     rules: &[Rule],
     df: &Dockerfile,
-    path: &PathBuf,
+    path: &Path,
 ) -> Vec<Finding> {
     let mut findings = Vec::new();
 

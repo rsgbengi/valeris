@@ -156,8 +156,11 @@ pub fn load_rules_from_dir(dir: &Path) -> anyhow::Result<RuleSet> {
         version: 1,
         rules: Vec::new(),
     };
-    for entry in std::fs::read_dir(dir)?{
-        let path = entry?.path();
+    for entry in std::fs::read_dir(dir)
+        .with_context(|| format!("Failed to read rules directory {}", dir.display()))? {
+        let path = entry
+            .with_context(|| format!("Failed to read directory entry in {}", dir.display()))?
+            .path();
         if path.extension().map(|e| e == "yml" || e == "yaml").unwrap_or(false){
             let content = std::fs::read_to_string(&path).with_context(|| format!("Reading {}", path.display()))?;
             let parsed: RuleSet = serde_yaml::from_str(&content).with_context(|| format!("Parsing yaml in {}", path.display()))?;

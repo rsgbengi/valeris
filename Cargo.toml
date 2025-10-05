@@ -26,6 +26,9 @@ itertools = "0.14.0"
 indexmap = "2.9.0"
 walkdir = "2"
 dockerfile-parser = "0.9.0"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+atty = "0.2"
 
 [[bin]]
 name = "valeris"

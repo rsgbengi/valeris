@@ -9,10 +9,12 @@
 //!
 //! * [`scanner`] - Main orchestration and scanning logic
 //! * [`yaml_rules`] - YAML rule definitions and loading
-//! * [`printer`] - Human-readable output formatting (tables, colors)
 //! * [`matcher`] - Rule matching logic (regex, glob, predicates)
 //! * [`instruction_utils`] - Utilities for working with Dockerfile instructions
-//! * [`exporters`] - JSON and CSV export functionality
+//!
+//! For output formatting, see the unified [`crate::output`] module:
+//! - [`crate::output::printer`] - Visual console output
+//! - [`crate::output::exporters`] - JSON/CSV export functionality
 //!
 //! # Example Usage
 //!
@@ -32,7 +34,5 @@
 
 pub mod scanner;
 pub mod yaml_rules;
-pub mod printer;
 pub mod matcher;
 pub mod instruction_utils;
-pub mod exporters;

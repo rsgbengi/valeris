@@ -26,7 +26,9 @@ pub async fn scan_docker_with_yaml_detectors(
         .with_context(|| format!("loading YAML detectors from {}", rules_dir.display()))?;
 
     let state_set = parse_state_set(&state);
-    let containers = get_containers(state_set.as_ref()).await?;
+    let containers = get_containers(state_set.as_ref())
+        .await
+        .context("Failed to connect to Docker daemon or list containers")?;
 
     let rule_ids = collect_rule_ids(&engine);
     let only_set = parse_id_set(&only);
@@ -112,14 +114,16 @@ fn validate_ids(available: &HashSet<String>, provided: &Option<HashSet<String>>,
 
 
 async fn get_containers(state_filter: Option<&HashSet<String>>) -> Result<Vec<ContainerInspectResponse>> {
-    let docker = Docker::connect_with_socket_defaults()?;
+    let docker = Docker::connect_with_socket_defaults()
+        .context("Failed to connect to Docker socket")?;
 
     let containers = docker
         .list_containers(Some(ListContainersOptions::<String> {
             all: true,
             ..Default::default()
         }))
-        .await?;
+        .await
+        .context("Failed to list Docker containers")?;
 
     let mut result = Vec::new();
 
@@ -134,7 +138,8 @@ async fn get_containers(state_filter: Option<&HashSet<String>>) -> Result<Vec<Co
         if let Some(id) = container.id.as_deref() {
             let inspect = docker
                 .inspect_container(id, None::<InspectContainerOptions>)
-                .await?;
+                .await
+                .with_context(|| format!("Failed to inspect container {}", id))?;
             result.push(inspect);
         }
     }

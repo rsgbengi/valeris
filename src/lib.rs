@@ -1,7 +1,8 @@
 pub mod cli;
-
+pub mod config;
 pub mod detectors;
 pub mod docker;
+pub mod output;
 mod rules;
 use detectors::runtime::yaml_rules::YamlRuleEngine;
 
@@ -9,13 +10,13 @@ use std::path::Path;
 
 use rules::ensure_rules;
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use clap::Parser;
 use cli::{Cli, Commands};
 use detectors::runtime::scanner::scan_docker_with_yaml_detectors;
 use detectors::dockerfile::scanner::scan_dockerfile;
-use docker::exporters::export_findings_grouped;
-use docker::printer::print_container_report;
+use output::printer::{print_scan_report, ScanContext};
+use output::exporters::{export_scan_results, ScanSource};
 
 // ────────────────────────────────────────────────────────────────────
 // LIST YAML DETECTORS
@@ -51,14 +52,26 @@ where
             format,
             output,
         } => {
-            let rules_dir = tokio::task::spawn_blocking(ensure_rules).await??;
-            let results = scan_docker_with_yaml_detectors(rules_dir, only, exclude, state).await?;
+            let rules_dir = tokio::task::spawn_blocking(ensure_rules)
+                .await
+                .context("Failed to spawn rules download task")?
+                .context("Failed to download or locate rules")?;
+            let results = scan_docker_with_yaml_detectors(rules_dir, only, exclude, state)
+                .await
+                .context("Docker scan failed")?;
 
             if output.is_some() {
-                export_findings_grouped(&results, &format, &output);
+                export_scan_results(
+                    ScanSource::Containers(&results),
+                    &format,
+                    &output
+                )?;
             } else {
                 for result in results {
-                    print_container_report(&result.container, &result.findings);
+                    print_scan_report(
+                        ScanContext::Container(&result.container),
+                        &result.findings
+                    );
                 }
             }
         }

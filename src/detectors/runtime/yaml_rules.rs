@@ -61,8 +61,11 @@ impl YamlRuleEngine {
 
     let mut rules = Vec::new();
     if dir.exists() {
-        for entry in fs::read_dir(&dir)? {
-            let path = entry?.path();
+        for entry in fs::read_dir(&dir)
+            .with_context(|| format!("Failed to read directory {}", dir.display()))? {
+            let path = entry
+                .with_context(|| format!("Failed to read directory entry in {}", dir.display()))?
+                .path();
             if path.extension().and_then(|e| e.to_str()) == Some("yaml") {
                 let contents = fs::read_to_string(&path)
                     .with_context(|| format!("reading {}", path.display()))?;
@@ -72,7 +75,7 @@ impl YamlRuleEngine {
             }
         }
     }
-    println!("Loaded {} YAML rules from {}", rules.len(), dir.display());
+    tracing::info!("Loaded {} YAML rules from {}", rules.len(), dir.display());
     Ok(Self { rules })
 }
 
