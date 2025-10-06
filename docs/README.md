@@ -6,48 +6,29 @@ Welcome to the Valeris documentation! This guide will help you understand, use, 
 
 ### Getting Started
 - [Quick Start Guide](guides/quick-start.md) - Get up and running in 5 minutes
-- [Installation](guides/installation.md) - Detailed installation instructions
-- [Configuration](guides/configuration.md) - Configure Valeris for your environment
 
 ### Architecture
 - [Architecture Overview](architecture/overview.md) - System design and components
-- [Rule Engine](architecture/rule-engine.md) - How the YAML rule engine works
-- [Custom Rules](architecture/custom-rules.md) - Creating your own detection rules
 
 ### Rules Reference
 - [Dockerfile Rules](rules/dockerfile-rules.md) - All 37 Dockerfile security rules
 - [Runtime Rules](rules/runtime-rules.md) - All 36 container runtime rules
-- [Severity Levels](rules/severity-levels.md) - Understanding risk classification
-
-### Usage Guides
-- [Scanning Dockerfiles](guides/dockerfile-scanning.md) - Static analysis guide
-- [Scanning Containers](guides/runtime-scanning.md) - Runtime analysis guide
-- [Output Formats](guides/output-formats.md) - JSON, CSV, and table outputs
-- [CI/CD Integration](guides/ci-cd-integration.md) - Automate security scanning
-- [Advanced Filtering](guides/filtering.md) - Filter by rules, severity, state
 
 ### Contributing
 - [Contributing Guide](contributing/CONTRIBUTING.md) - How to contribute
-- [Development Setup](contributing/development.md) - Set up dev environment
-- [Writing Tests](contributing/testing.md) - Testing guidelines
-- [Code Style](contributing/code-style.md) - Coding standards
 
 ## 🚀 Quick Links
 
 ### For Users
 - **New to Valeris?** → [Quick Start Guide](guides/quick-start.md)
-- **Need help?** → [Troubleshooting](guides/troubleshooting.md)
-- **Want examples?** → [Example Scans](guides/examples.md)
 
 ### For Developers
 - **Architecture?** → [Overview](architecture/overview.md)
-- **Add rules?** → [Custom Rules](architecture/custom-rules.md)
 - **Contribute?** → [Contributing](contributing/CONTRIBUTING.md)
 
 ### Reference
 - **Dockerfile rules?** → [Dockerfile Rules](rules/dockerfile-rules.md)
 - **Runtime rules?** → [Runtime Rules](rules/runtime-rules.md)
-- **CI/CD setup?** → [CI/CD Guide](guides/ci-cd-integration.md)
 
 ## 📖 Documentation Structure
 
@@ -56,32 +37,17 @@ docs/
 ├── README.md                          # This file
 │
 ├── guides/                            # User guides
-│   ├── quick-start.md                 # 5-minute getting started
-│   ├── installation.md                # Detailed installation
-│   ├── configuration.md               # Configuration options
-│   ├── dockerfile-scanning.md         # Dockerfile analysis guide
-│   ├── runtime-scanning.md            # Container scanning guide
-│   ├── output-formats.md              # Export formats
-│   ├── ci-cd-integration.md           # CI/CD setup
-│   ├── filtering.md                   # Advanced filtering
-│   ├── troubleshooting.md             # Common issues
-│   └── examples.md                    # Usage examples
+│   └── quick-start.md                 # 5-minute getting started
 │
 ├── architecture/                      # System design
-│   ├── overview.md                    # High-level architecture
-│   ├── rule-engine.md                 # Rule engine internals
-│   └── custom-rules.md                # Creating rules
+│   └── overview.md                    # High-level architecture
 │
 ├── rules/                             # Rules reference
 │   ├── dockerfile-rules.md            # All Dockerfile rules
-│   ├── runtime-rules.md               # All runtime rules
-│   └── severity-levels.md             # Risk classification
+│   └── runtime-rules.md               # All runtime rules
 │
 └── contributing/                      # Contribution guides
-    ├── CONTRIBUTING.md                # Main contributing guide
-    ├── development.md                 # Dev environment setup
-    ├── testing.md                     # Testing guidelines
-    └── code-style.md                  # Coding standards
+    └── CONTRIBUTING.md                # Main contributing guide
 ```
 
 ## 🎯 Common Tasks
@@ -90,20 +56,17 @@ docs/
 ```bash
 valeris docker-file --path ./Dockerfile --rules ./rules/dockerfile
 ```
-📖 [Full Dockerfile Scanning Guide →](guides/dockerfile-scanning.md)
 
 ### Scan Running Containers
 ```bash
 valeris scan --state running
 ```
-📖 [Full Runtime Scanning Guide →](guides/runtime-scanning.md)
 
 ### Export to JSON/CSV
 ```bash
 valeris scan --format json --output results.json
 valeris scan --format csv --output results.csv
 ```
-📖 [Output Formats Guide →](guides/output-formats.md)
 
 ### Filter by Rules
 ```bash
@@ -113,7 +76,6 @@ valeris scan --only privileged_mode,capabilities,secrets_in_env
 # Exclude noisy rules
 valeris scan --exclude readonly_rootfs,log_driver
 ```
-📖 [Filtering Guide →](guides/filtering.md)
 
 ### Add Custom Rule
 ```yaml
@@ -127,51 +89,42 @@ match:
   equals: "bad-value"
 message: "Custom issue detected"
 ```
-📖 [Custom Rules Guide →](architecture/custom-rules.md)
+📖 See [Contributing Guide](contributing/CONTRIBUTING.md#-adding-security-rules) for more details
 
 ## 🔍 Finding Information
 
 ### By Topic
 
 **Security:**
-- [Dockerfile Security Rules](rules/dockerfile-rules.md#security)
-- [Runtime Security Rules](rules/runtime-rules.md#security)
-- [Severity Levels](rules/severity-levels.md)
+- [Dockerfile Security Rules](rules/dockerfile-rules.md)
+- [Runtime Security Rules](rules/runtime-rules.md)
 
-**Configuration:**
-- [Environment Variables](guides/configuration.md#environment-variables)
-- [Rules Directory](guides/configuration.md#rules-directory)
-- [Output Settings](guides/configuration.md#output-settings)
-
-**Integration:**
-- [GitHub Actions](guides/ci-cd-integration.md#github-actions)
-- [GitLab CI](guides/ci-cd-integration.md#gitlab-ci)
-- [Jenkins](guides/ci-cd-integration.md#jenkins)
+**Architecture:**
+- [System Overview](architecture/overview.md)
+- [Rule Engine](architecture/overview.md#-core-components)
+- [Data Flow](architecture/overview.md#-execution-flow)
 
 **Development:**
 - [Architecture](architecture/overview.md)
-- [Adding Features](contributing/development.md)
-- [Writing Tests](contributing/testing.md)
+- [Contributing](contributing/CONTRIBUTING.md)
 
 ### By Question
 
 **"How do I...?"**
-- ...scan a Dockerfile? → [Quick Start](guides/quick-start.md#2-scan-a-dockerfile)
-- ...filter results? → [Filtering Guide](guides/filtering.md)
-- ...export to JSON? → [Output Formats](guides/output-formats.md#json-export)
-- ...add a custom rule? → [Custom Rules](architecture/custom-rules.md)
-- ...integrate with CI? → [CI/CD Guide](guides/ci-cd-integration.md)
+- ...scan a Dockerfile? → [Quick Start - Scan Dockerfile](guides/quick-start.md#2-scan-a-dockerfile)
+- ...scan containers? → [Quick Start - Scan Containers](guides/quick-start.md#1-scan-running-containers)
+- ...filter results? → [Quick Start - Filtering](guides/quick-start.md#filtering-results)
+- ...export to JSON? → [Quick Start - Export](guides/quick-start.md#3-export-results)
+- ...add a custom rule? → [Contributing - Adding Rules](contributing/CONTRIBUTING.md#-adding-security-rules)
 
 **"What is...?"**
 - ...the architecture? → [Architecture Overview](architecture/overview.md)
-- ...a YAML rule? → [Rule Engine](architecture/rule-engine.md)
-- ...severity level? → [Severity Levels](rules/severity-levels.md)
-- ...JSONPath? → [Rule Engine - JSONPath](architecture/rule-engine.md#jsonpath)
+- ...a YAML rule? → [Architecture - Rule Engine](architecture/overview.md#3-rule-engine-srcdetectorsruntimeyaml_rulesrs)
+- ...JSONPath? → [Runtime Rules - JSONPath Examples](rules/runtime-rules.md#-jsonpath-examples)
 
 **"Where can I find...?"**
 - ...all Dockerfile rules? → [Dockerfile Rules](rules/dockerfile-rules.md)
 - ...all runtime rules? → [Runtime Rules](rules/runtime-rules.md)
-- ...example scans? → [Examples](guides/examples.md)
 - ...contribution guide? → [Contributing](contributing/CONTRIBUTING.md)
 
 ## 🆘 Getting Help
@@ -187,9 +140,8 @@ message: "Custom issue detected"
 - 📝 [Blog Series](https://www.kayssel.com/series/docker-security/)
 
 ### Reporting Issues
-1. Check [Troubleshooting Guide](guides/troubleshooting.md)
-2. Search existing issues
-3. Create new issue with template
+1. Search existing issues
+2. Create new issue with template from [Contributing Guide](contributing/CONTRIBUTING.md#-reporting-bugs)
 
 ## 📝 Contributing to Docs
 
@@ -227,10 +179,8 @@ See [Contributing Guide](contributing/CONTRIBUTING.md#-documentation-contributio
 | Dockerfile Rules | ✅ Complete | 2025-01-06 |
 | Runtime Rules | ✅ Complete | 2025-01-06 |
 | Contributing | ✅ Complete | 2025-01-06 |
-| CI/CD Guide | 🔄 In Progress | - |
-| Advanced Topics | 📝 Planned | - |
 
-**Legend:** ✅ Complete | 🔄 In Progress | 📝 Planned
+**Legend:** ✅ Complete
 
 ---
 
