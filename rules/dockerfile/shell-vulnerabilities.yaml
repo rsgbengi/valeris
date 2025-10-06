@@ -1,0 +1,76 @@
+version: 1
+rules:
+  - id: DF601
+    name: Using sudo in Dockerfile
+    scope: instruction
+    kind: RUN
+    match:
+      field: command
+      regex: "\\bsudo\\b"
+    severity: medium
+    message: "sudo used in Dockerfile (unnecessary and potentially insecure)"
+    remediation: "Remove sudo - Dockerfile RUN commands already run as root by default"
+    tags: [security, best-practices]
+
+  - id: DF602
+    name: Shell variable expansion detected
+    scope: instruction
+    kind: RUN
+    match:
+      field: command
+      regex: "\\$[A-Za-z_][A-Za-z0-9_]*"
+    severity: info
+    message: "Shell variable expansion detected (ensure proper quoting)"
+    remediation: "Quote variables: \"$VAR\" instead of $VAR to prevent word splitting"
+    tags: [best-practices]
+
+  - id: DF603
+    name: Using eval or exec
+    scope: instruction
+    kind: RUN
+    match:
+      field: command
+      regex: "\\b(eval|exec)\\s+"
+    severity: high
+    message: "eval/exec detected (can be dangerous with untrusted input)"
+    remediation: "Avoid eval/exec or ensure input is properly sanitized"
+    tags: [security]
+
+  - id: DF604
+    name: Chown with user input
+    scope: instruction
+    kind: RUN
+    match:
+      all:
+        - field: command
+          regex: "chown"
+        - field: command
+          regex: "\\$"
+    severity: medium
+    message: "chown with variable expansion (potential security risk)"
+    remediation: "Use COPY --chown instead or validate input carefully"
+    tags: [security]
+
+  - id: DF605
+    name: chmod 777 detected
+    scope: instruction
+    kind: RUN
+    match:
+      field: command
+      regex: "chmod\\s+(777|-R\\s+777|u\\+rwx,g\\+rwx,o\\+rwx)"
+    severity: high
+    message: "chmod 777 detected (world-writable permissions)"
+    remediation: "Use minimal permissions needed (e.g., 755 or 644)"
+    tags: [security]
+
+  - id: DF606
+    name: Setuid/setgid bits set
+    scope: instruction
+    kind: RUN
+    match:
+      field: command
+      regex: "chmod\\s+[+]?[us]"
+    severity: critical
+    message: "Setting setuid/setgid bits (major security risk)"
+    remediation: "Avoid setuid/setgid in containers - use capabilities instead"
+    tags: [security]

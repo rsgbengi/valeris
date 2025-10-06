@@ -4,6 +4,7 @@
 //! the application, including rules management, Docker settings, and output preferences.
 
 use std::path::PathBuf;
+use std::io::IsTerminal;
 
 /// Default URL for downloading rule releases from GitHub
 pub const DEFAULT_RULES_RELEASE_URL: &str =
@@ -81,7 +82,7 @@ pub struct OutputConfig {
 impl Default for OutputConfig {
     fn default() -> Self {
         Self {
-            use_colors: atty::is(atty::Stream::Stdout),
+            use_colors: std::io::stdout().is_terminal(),
             table_width: 80,
             verbose_errors: false,
         }

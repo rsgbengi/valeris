@@ -1,0 +1,12 @@
+id: log_driver
+name: "No Centralized Logging"
+target: docker_runtime
+severity: LOW
+description: Detects containers using json-file or default logging driver instead of centralized logging.
+match:
+  jsonpath: "$.HostConfig.LogConfig.Type"
+  regex: "^(json-file|)$"
+include_match_in_description: true
+message: "Container uses local logging instead of centralized log aggregation"
+fix: |
+  Use centralized logging: --log-driver syslog or --log-driver fluentd

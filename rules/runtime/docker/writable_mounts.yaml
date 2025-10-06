@@ -1,0 +1,15 @@
+id: writable_sensitive_mounts
+name: "Writable Sensitive Mounts"
+target: docker_runtime
+severity: CRITICAL
+description: Detects writable mounts of sensitive directories like /etc, /boot, or /lib.
+match:
+  parts:
+    - jsonpath: "$.Mounts[*].Source"
+    - jsonpath: "$.Mounts[*].RW"
+  separator: ":"
+  regex: "^(/etc|/boot|/lib|/usr):true$"
+include_match_in_description: true
+message: "Container has writable mount to sensitive host directory"
+fix: |
+  Mount sensitive directories as read-only using :ro flag.

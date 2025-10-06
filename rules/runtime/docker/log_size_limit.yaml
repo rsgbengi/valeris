@@ -1,0 +1,12 @@
+id: log_no_limit
+name: "No Log Size Limit"
+target: docker_runtime
+severity: MEDIUM
+description: Detects containers without log size limits that could fill disk space.
+match:
+  jsonpath: "$.HostConfig.LogConfig.Config['max-size']"
+  regex: "^$"
+  missing: true
+message: "Container has no log size limit (disk space risk)"
+fix: |
+  Set log limits: --log-opt max-size=10m --log-opt max-file=3

@@ -127,7 +127,7 @@ pub struct Predicate {
     #[serde(default)]
     pub field: Option<String>,
     #[serde(default)]
-    pub equals: Option<serde_yaml::Value>,
+    pub equals: Option<serde_yml::Value>,
     #[serde(default, deserialize_with = "optional_regex::deserialize")]
     pub regex: Option<Regex>,
     #[serde(default)]
@@ -163,7 +163,7 @@ pub fn load_rules_from_dir(dir: &Path) -> anyhow::Result<RuleSet> {
             .path();
         if path.extension().map(|e| e == "yml" || e == "yaml").unwrap_or(false){
             let content = std::fs::read_to_string(&path).with_context(|| format!("Reading {}", path.display()))?;
-            let parsed: RuleSet = serde_yaml::from_str(&content).with_context(|| format!("Parsing yaml in {}", path.display()))?;
+            let parsed: RuleSet = serde_yml::from_str(&content).with_context(|| format!("Parsing yaml in {}", path.display()))?;
             out.rules.extend(parsed.rules);
         }
     }

@@ -1,0 +1,68 @@
+version: 1
+rules:
+  - id: DF101
+    name: Missing apt cache cleanup
+    scope: instruction
+    kind: RUN
+    match:
+      all:
+        - field: command
+          regex: "apt-get\\s+install"
+        - field: command
+          regex: "rm\\s+-rf\\s+/var/lib/apt/lists"
+          missing: true
+    severity: medium
+    message: "apt-get install without cleaning cache (increases image size)"
+    remediation: "Add '&& rm -rf /var/lib/apt/lists/*' to cleanup apt cache"
+    tags: [optimization, best-practices]
+
+  - id: DF102
+    name: Missing apt update and install chaining
+    scope: instruction
+    kind: RUN
+    match:
+      all:
+        - field: command
+          regex: "apt-get\\s+install"
+        - field: command
+          regex: "apt-get\\s+update"
+          missing: true
+    severity: low
+    message: "apt-get install without apt-get update in same RUN (can use stale cache)"
+    remediation: "Chain commands: RUN apt-get update && apt-get install -y <packages> && rm -rf /var/lib/apt/lists/*"
+    tags: [best-practices]
+
+  - id: DF103
+    name: Missing -y flag in apt-get install
+    scope: instruction
+    kind: RUN
+    match:
+      all:
+        - field: command
+          regex: "apt-get\\s+install"
+        - field: command
+          regex: "apt-get\\s+install\\s+-y"
+          missing: true
+        - field: command
+          regex: "apt-get\\s+install\\s+--yes"
+          missing: true
+    severity: low
+    message: "apt-get install without -y flag (can hang during build)"
+    remediation: "Use 'apt-get install -y' to avoid interactive prompts"
+    tags: [best-practices]
+
+  - id: DF104
+    name: Using apt instead of apt-get
+    scope: instruction
+    kind: RUN
+    match:
+      all:
+        - field: command
+          regex: "\\bapt\\s+install"
+        - field: command
+          regex: "\\bapt-get"
+          missing: true
+    severity: low
+    message: "Using 'apt' instead of 'apt-get' (not recommended for scripts)"
+    remediation: "Use 'apt-get' for Dockerfiles (apt is for interactive use)"
+    tags: [best-practices]

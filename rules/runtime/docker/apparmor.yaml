@@ -1,0 +1,11 @@
+id: no_apparmor
+name: "AppArmor Disabled"
+target: docker_runtime
+severity: MEDIUM
+description: Detects containers without AppArmor security profile enabled.
+match:
+  jsonpath: "$.AppArmorProfile"
+  regex: "^(unconfined|)$"
+message: "Container running without AppArmor protection"
+fix: |
+  Enable AppArmor: --security-opt apparmor=docker-default

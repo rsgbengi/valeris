@@ -1,0 +1,37 @@
+version: 1
+rules:
+  - id: DF701
+    name: Missing LABEL maintainer
+    scope: file
+    when:
+      requires_dockerignore_if_copy_dot: false
+    severity: info
+    message: "No LABEL maintainer defined"
+    remediation: "Add LABEL maintainer='your-email@example.com' for image metadata"
+    tags: [metadata, best-practices]
+
+  - id: DF702
+    name: Hardcoded version in Dockerfile
+    scope: instruction
+    kind: RUN
+    match:
+      all:
+        - field: command
+          regex: "VERSION="
+        - field: command
+          regex: "ARG\\s+VERSION"
+          missing: true
+    severity: low
+    message: "Hardcoded VERSION variable (should use ARG)"
+    remediation: "Use ARG VERSION and pass via --build-arg for flexibility"
+    tags: [best-practices]
+
+  - id: DF703
+    name: Excessive LABEL instructions
+    scope: instruction
+    kind: LABEL
+    match: {}
+    severity: info
+    message: "Multiple LABEL instructions (can be combined)"
+    remediation: "Combine labels: LABEL key1='val1' key2='val2'"
+    tags: [optimization]

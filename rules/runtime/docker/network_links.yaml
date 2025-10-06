@@ -1,0 +1,11 @@
+id: legacy_links
+name: "Legacy Container Links"
+target: docker_runtime
+severity: LOW
+description: Detects use of deprecated --link flag instead of user-defined networks.
+match:
+  jsonpath: "$.HostConfig.Links[*]"
+  regex: ".*"
+message: "Container uses deprecated --link (use user-defined networks instead)"
+fix: |
+  Migrate to user-defined networks for better isolation and DNS.

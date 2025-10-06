@@ -1,0 +1,12 @@
+id: device_access
+name: "Host Device Access"
+target: docker_runtime
+severity: HIGH
+description: Detects containers with access to host devices which could be exploited.
+match:
+  jsonpath: "$.HostConfig.Devices[*].PathOnHost"
+  regex: "^/dev/"
+include_match_in_description: true
+message: "Container has access to host device"
+fix: |
+  Minimize device access. Only grant specific devices if absolutely necessary.

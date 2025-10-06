@@ -1,0 +1,12 @@
+id: extra_hosts
+name: "Extra Hosts Configuration"
+target: docker_runtime
+severity: INFO
+description: Detects containers with custom /etc/hosts entries that could redirect traffic.
+match:
+  jsonpath: "$.HostConfig.ExtraHosts[*]"
+  regex: ".*"
+include_match_in_description: true
+message: "Container has custom /etc/hosts entries"
+fix: |
+  Review extra hosts configuration for any suspicious redirections.

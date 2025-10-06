@@ -1,0 +1,12 @@
+id: custom_cgroup
+name: "Custom CGroup Parent"
+target: docker_runtime
+severity: LOW
+description: Detects containers with custom cgroup parent that could bypass resource limits.
+match:
+  jsonpath: "$.HostConfig.CgroupParent"
+  regex: "^.+$"
+include_match_in_description: true
+message: "Container uses custom cgroup parent (review resource isolation)"
+fix: |
+  Use default cgroup hierarchy unless specifically required.

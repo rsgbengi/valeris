@@ -1,0 +1,12 @@
+id: latest_tag
+name: "Image Using Latest Tag"
+target: docker_runtime
+severity: MEDIUM
+description: Detects containers using images with 'latest' tag (non-deterministic).
+match:
+  jsonpath: "$.Config.Image"
+  regex: ":latest$|^[^:]+$"
+include_match_in_description: true
+message: "Container uses image with mutable 'latest' tag"
+fix: |
+  Use specific image tags or digests for reproducibility: image:1.2.3 or image@sha256:...

@@ -1,0 +1,12 @@
+id: port_all_interfaces
+name: "Port Bound to All Interfaces"
+target: docker_runtime
+severity: MEDIUM
+description: Detects ports bound to 0.0.0.0 instead of specific interfaces.
+match:
+  jsonpath: "$.HostConfig.PortBindings.*.*.HostIp"
+  regex: "^(0\\.0\\.0\\.0)?$"
+include_match_in_description: true
+message: "Container port is bound to all interfaces (0.0.0.0)"
+fix: |
+  Bind ports to specific interfaces: -p 127.0.0.1:8080:8080 instead of -p 8080:8080

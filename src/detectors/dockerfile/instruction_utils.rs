@@ -5,7 +5,7 @@
 //! calculating line numbers.
 
 use dockerfile_parser::{Instruction, Stage};
-use serde_yaml::Value;
+use serde_yml::Value;
 use std::collections::HashMap;
 
 /// Extracts the instruction type as a string (e.g., "FROM", "RUN", "USER").

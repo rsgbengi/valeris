@@ -1,0 +1,57 @@
+# ✅ EJEMPLO DE DOCKERFILE SEGURO
+# Este Dockerfile sigue las mejores prácticas de seguridad
+
+# Usa imagen base específica con digest
+FROM node:18.19.0-alpine@sha256:435dcad253bb5b7f347ebc69c8cc52de7c912eb7241098b920f2fc2d7843183d AS builder
+
+# Metadatos
+LABEL maintainer="security@example.com"
+LABEL version="1.0.0"
+LABEL description="Secure Node.js application"
+
+# Variables de build
+ARG NODE_ENV=production
+ARG APP_VERSION=1.0.0
+
+# Configuración de WORKDIR con path absoluto
+WORKDIR /app
+
+# Copiar solo archivos necesarios primero (layer caching)
+COPY package*.json ./
+
+# Instalar dependencias de forma determinística
+RUN npm ci --only=production --no-audit && \
+    npm cache clean --force
+
+# Stage final con imagen mínima
+FROM node:18.19.0-alpine@sha256:435dcad253bb5b7f347ebc69c8cc52de7c912eb7241098b920f2fc2d7843183d
+
+WORKDIR /app
+
+# Crear usuario no-root
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001 -G nodejs
+
+# Copiar dependencias del stage anterior
+COPY --from=builder --chown=nodejs:nodejs /app/node_modules ./node_modules
+
+# Copiar código fuente
+COPY --chown=nodejs:nodejs src ./src
+COPY --chown=nodejs:nodejs package*.json ./
+
+# Cambiar a usuario no-root
+USER nodejs
+
+# Exponer puerto no privilegiado
+EXPOSE 3000
+
+# Variables de entorno (sin secretos)
+ENV NODE_ENV=production \
+    PORT=3000
+
+# HEALTHCHECK para monitoreo
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD node healthcheck.js || exit 1
+
+# Exec form para CMD (mejor manejo de señales)
+CMD ["node", "src/server.js"]

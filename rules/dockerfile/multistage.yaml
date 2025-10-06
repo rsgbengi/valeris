@@ -1,0 +1,50 @@
+version: 1
+rules:
+  - id: DF501
+    name: Build tools in final image
+    scope: instruction
+    kind: RUN
+    match:
+      field: command
+      regex: "(gcc|g\\+\\+|make|cmake|build-essential|python3-dev|golang)"
+    severity: medium
+    message: "Build tools detected in RUN (should use multi-stage build)"
+    remediation: "Use multi-stage builds to keep build tools out of final image"
+    tags: [optimization, security]
+
+  - id: DF502
+    name: Unnamed intermediate build stage
+    scope: instruction
+    kind: FROM
+    match:
+      field: from.alias
+      missing: true
+    severity: info
+    message: "FROM instruction without AS alias (consider naming stages)"
+    remediation: "Name your stages for clarity: FROM node:18 AS builder"
+    tags: [best-practices]
+
+  - id: DF503
+    name: Git installed in final image
+    scope: instruction
+    kind: RUN
+    match:
+      field: command
+      regex: "\\b(git)\\b"
+    severity: low
+    message: "Git installed (usually only needed during build)"
+    remediation: "Install git in build stage only, not in final image"
+    tags: [optimization, security]
+
+  - id: DF504
+    name: Development dependencies in production
+    scope: instruction
+    kind: RUN
+    match:
+      field: command
+      regex: "npm\\s+install.*--production"
+      missing: true
+    severity: low
+    message: "npm install without --production flag"
+    remediation: "Use 'npm install --production' or 'npm ci --only=production' for final image"
+    tags: [optimization]

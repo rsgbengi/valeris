@@ -1,0 +1,11 @@
+id: no_healthcheck
+name: "No Health Check Configured"
+target: docker_runtime
+severity: INFO
+description: Detects containers without health check configuration for monitoring.
+match:
+  jsonpath: "$.Config.Healthcheck"
+  missing: true
+message: "Container has no health check configured"
+fix: |
+  Add HEALTHCHECK in Dockerfile or use --health-cmd flag.

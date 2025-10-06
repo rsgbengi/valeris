@@ -4,7 +4,7 @@
 //! supporting various matching strategies including equals, regex, glob, and composite matches.
 
 use crate::detectors::dockerfile::yaml_rules::{Matcher, Predicate};
-use serde_yaml::Value;
+use serde_yml::Value;
 use std::collections::HashMap;
 
 /// Evaluates whether an instruction context matches a rule's matcher.

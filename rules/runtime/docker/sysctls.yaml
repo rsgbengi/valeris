@@ -1,0 +1,12 @@
+id: dangerous_sysctls
+name: "Dangerous Sysctl Settings"
+target: docker_runtime
+severity: HIGH
+description: Detects containers with potentially dangerous kernel parameters modified.
+match:
+  jsonpath: "$.HostConfig.Sysctls.*"
+  regex: "(net\\.ipv4\\.ip_forward|kernel\\.)"
+include_match_in_description: true
+message: "Container modifies dangerous kernel parameters via sysctl"
+fix: |
+  Review sysctl settings. Avoid modifying kernel parameters unless absolutely necessary.

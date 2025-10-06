@@ -1,0 +1,85 @@
+version: 1
+rules:
+  - id: DF801
+    name: Running sshd in container
+    scope: instruction
+    kind: RUN
+    match:
+      field: command
+      regex: "\\b(sshd|ssh-keygen)\\b"
+    severity: high
+    message: "SSH daemon detected (anti-pattern in containers)"
+    remediation: "Use 'docker exec' for debugging or kubernetes exec, not SSH"
+    tags: [security, anti-pattern]
+
+  - id: DF802
+    name: Installing systemd or init
+    scope: instruction
+    kind: RUN
+    match:
+      field: command
+      regex: "\\b(systemd|systemctl|service\\s+start|init\\.d)\\b"
+    severity: medium
+    message: "systemd/init system detected (containers should run one process)"
+    remediation: "Run application directly, don't use init systems in containers"
+    tags: [best-practices, anti-pattern]
+
+  - id: DF803
+    name: Using sleep infinity
+    scope: instruction
+    kind: CMD
+    match:
+      field: command
+      regex: "sleep\\s+(infinity|99999)"
+    severity: medium
+    message: "CMD sleeps forever (container should run actual service)"
+    remediation: "Run your application directly as CMD"
+    tags: [best-practices]
+
+  - id: DF804
+    name: Running cron in foreground
+    scope: instruction
+    kind: CMD
+    match:
+      field: command
+      regex: "\\bcron\\b"
+    severity: low
+    message: "Running cron (consider kubernetes CronJob instead)"
+    remediation: "Use kubernetes CronJobs for scheduled tasks"
+    tags: [best-practices]
+
+  - id: DF805
+    name: Installing unnecessary packages
+    scope: instruction
+    kind: RUN
+    match:
+      field: command
+      regex: "\\b(vim|nano|emacs|telnet|netcat|nc)\\b"
+    severity: low
+    message: "Installing debugging/editing tools (increases attack surface)"
+    remediation: "Use multi-stage builds and minimal final images"
+    tags: [security, optimization]
+
+  - id: DF806
+    name: Using dist-upgrade
+    scope: instruction
+    kind: RUN
+    match:
+      field: command
+      regex: "\\b(dist-upgrade|full-upgrade)\\b"
+    severity: medium
+    message: "Using dist-upgrade (can break reproducibility)"
+    remediation: "Pin specific versions instead of upgrading entire distribution"
+    tags: [reproducibility]
+
+  - id: DF807
+    name: Removing package manager
+    scope: instruction
+    kind: RUN
+    match:
+      field: command
+      regex: "rm.*\\b(apt-get|apk|yum|dnf)\\b"
+    severity: critical
+    message: "Removing package manager (makes debugging impossible)"
+    remediation: "Keep package manager for security updates and debugging"
+    tags: [anti-pattern]
