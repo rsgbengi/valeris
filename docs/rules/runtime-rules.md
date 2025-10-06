@@ -1,178 +1,178 @@
 # Docker Runtime Security Rules
 
-Este directorio contiene reglas YAML para análisis de contenedores Docker en ejecución (runtime).
+This directory contains YAML rules for analyzing running Docker containers (runtime).
 
-## 📋 Categorías de Reglas
+## 📋 Rule Categories
 
-### 🔐 Seguridad de Contenedores (Security)
+### 🔐 Container Security
 
-#### Modos Privilegiados y Capabilities
-- `privileged_mode` (HIGH) - Detecta modo privilegiado habilitado
-- `capabilities` (HIGH) - Capabilities peligrosas: SYS_ADMIN, NET_ADMIN, SYS_MODULE, SYS_PTRACE
-- `no_new_privileges` (MEDIUM) - No-new-privileges no configurado (permite escalada)
+#### Privileged Modes and Capabilities
+- `privileged_mode` (HIGH) - Detects privileged mode enabled
+- `capabilities` (HIGH) - Dangerous capabilities: SYS_ADMIN, NET_ADMIN, SYS_MODULE, SYS_PTRACE
+- `no_new_privileges` (MEDIUM) - No-new-privileges not configured (allows privilege escalation)
 
-#### Perfiles de Seguridad
-- `seccomp_unconfined` (HIGH) - Seccomp deshabilitado (sin filtrado de syscalls)
-- `apparmor` (MEDIUM) - AppArmor deshabilitado o unconfined
-- `security_options` (MEDIUM) - Opciones de seguridad no configuradas
+#### Security Profiles
+- `seccomp_unconfined` (HIGH) - Seccomp disabled (no syscall filtering)
+- `apparmor` (MEDIUM) - AppArmor disabled or unconfined
+- `security_options` (MEDIUM) - Security options not configured
 
 #### Linux Security Modules
-- `user_namespace` (MEDIUM) - User namespaces no habilitados (remapping UID/GID)
+- `user_namespace` (MEDIUM) - User namespaces not enabled (UID/GID remapping)
 
-### 🗂️ Sistema de Archivos y Montajes (Mounts)
+### 🗂️ Filesystem and Mounts
 
-#### Montajes Sensibles
-- `mounts` (HIGH) - Montaje de paths sensibles: /var/run/docker.sock, /proc, /sys, /etc, /root
-- `writable_sensitive_mounts` (CRITICAL) - Montajes writable de /etc, /boot, /lib, /usr
-- `mount_propagation` (HIGH) - Propagación peligrosa: shared, rshared, slave, rslave
+#### Sensitive Mounts
+- `mounts` (HIGH) - Mounting sensitive paths: /var/run/docker.sock, /proc, /sys, /etc, /root
+- `writable_sensitive_mounts` (CRITICAL) - Writable mounts of /etc, /boot, /lib, /usr
+- `mount_propagation` (HIGH) - Dangerous propagation: shared, rshared, slave, rslave
 
-#### Sistema de Archivos
-- `readonly_rootfs` (MEDIUM) - Root filesystem no read-only
-- `tmpfs_exec` (MEDIUM) - tmpfs sin flag noexec (permite ejecución desde memoria)
+#### Filesystem
+- `readonly_rootfs` (MEDIUM) - Root filesystem not read-only
+- `tmpfs_exec` (MEDIUM) - tmpfs without noexec flag (allows execution from memory)
 
-### 🌐 Configuración de Red (Network)
+### 🌐 Network Configuration
 
-#### Modos de Red
-- `network_mode` (MEDIUM) - Network mode host (sin aislamiento)
-- `legacy_links` (LOW) - Uso de --link deprecado (usar user-defined networks)
+#### Network Modes
+- `network_mode` (MEDIUM) - Host network mode (no isolation)
+- `legacy_links` (LOW) - Using deprecated --link (use user-defined networks)
 
-#### Exposición de Puertos
-- `exposed_ports` (MEDIUM) - Puertos sensibles expuestos: 22 (SSH), 3306 (MySQL), 5432 (PostgreSQL), 6379 (Redis), etc.
-- `port_all_interfaces` (MEDIUM) - Puertos bound a 0.0.0.0 (todas las interfaces)
+#### Port Exposure
+- `exposed_ports` (MEDIUM) - Sensitive ports exposed: 22 (SSH), 3306 (MySQL), 5432 (PostgreSQL), 6379 (Redis), etc.
+- `port_all_interfaces` (MEDIUM) - Ports bound to 0.0.0.0 (all interfaces)
 
-#### DNS y Resolución
-- `custom_dns` (LOW) - DNS servers personalizados (posible exfiltración)
-- `extra_hosts` (INFO) - Entradas personalizadas en /etc/hosts
+#### DNS and Resolution
+- `custom_dns` (LOW) - Custom DNS servers (possible exfiltration)
+- `extra_hosts` (INFO) - Custom entries in /etc/hosts
 
-### 🔧 Namespaces y Aislamiento
+### 🔧 Namespaces and Isolation
 
-- `ipc_mode` (MEDIUM) - IPC mode host (sin aislamiento IPC)
-- `pid_mode` (MEDIUM) - PID mode host (puede ver todos los procesos)
-- `uts_mode` (MEDIUM) - UTS mode host (comparte hostname/domain)
+- `ipc_mode` (MEDIUM) - IPC host mode (no IPC isolation)
+- `pid_mode` (MEDIUM) - PID host mode (can see all processes)
+- `uts_mode` (MEDIUM) - UTS host mode (shares hostname/domain)
 
-### 📊 Recursos y Límites (Resources)
+### 📊 Resources and Limits
 
-#### Límites de Recursos
-- `resource_cpu_limit` (LOW) - Sin límites de CPU
-- `resource_memory_limit` (LOW) - Sin límites de memoria
-- `pid_limits` (LOW) - Sin límites de PIDs (fork bombs)
+#### Resource Limits
+- `resource_cpu_limit` (LOW) - No CPU limits
+- `resource_memory_limit` (LOW) - No memory limits
+- `pid_limits` (LOW) - No PID limits (fork bombs)
 
 #### CGroups
-- `cgroup_parent` (LOW) - CGroup parent personalizado (puede evadir límites)
+- `cgroup_parent` (LOW) - Custom CGroup parent (can evade limits)
 
-### 👤 Usuarios y Permisos (Users)
+### 👤 Users and Permissions
 
-- `root_user` (HIGH) - Usuario root (UID 0)
+- `root_user` (HIGH) - Root user (UID 0)
 
-### 🔑 Secretos y Configuración (Secrets)
+### 🔑 Secrets and Configuration
 
-- `secrets_in_env` (CRITICAL) - Secretos hardcoded en variables de entorno (PASSWORD, SECRET, TOKEN, API_KEY)
+- `secrets_in_env` (CRITICAL) - Hardcoded secrets in environment variables (PASSWORD, SECRET, TOKEN, API_KEY)
 
-### 🔄 Políticas de Reinicio (Restart)
+### 🔄 Restart Policies
 
-- `restart_policy` (LOW) - Always restart sin health check (puede ocultar fallos)
+- `restart_policy` (LOW) - Always restart without health check (can hide failures)
 
-### 📝 Logging y Monitoreo (Logging)
+### 📝 Logging and Monitoring
 
-- `log_driver` (LOW) - Logging local (json-file) en lugar de centralizado
-- `log_no_limit` (MEDIUM) - Sin límites de logs (riesgo de disco lleno)
-- `no_healthcheck` (INFO) - Sin HEALTHCHECK configurado
+- `log_driver` (LOW) - Local logging (json-file) instead of centralized
+- `log_no_limit` (MEDIUM) - No log limits (disk space risk)
+- `no_healthcheck` (INFO) - No HEALTHCHECK configured
 
-### 🖼️ Imágenes y Versiones (Images)
+### 🖼️ Images and Versions
 
-- `latest_tag` (MEDIUM) - Uso de tag 'latest' (no determinístico)
-- `image_no_digest` (INFO) - Imagen sin digest SHA256
-- `old_image` (LOW) - Imagen potencialmente desactualizada (>90 días)
+- `latest_tag` (MEDIUM) - Using 'latest' tag (non-deterministic)
+- `image_no_digest` (INFO) - Image without SHA256 digest
+- `old_image` (LOW) - Potentially outdated image (>90 days)
 
-### ⚙️ Configuración Avanzada (Advanced)
+### ⚙️ Advanced Configuration
 
-- `device_access` (HIGH) - Acceso a dispositivos del host (/dev/*)
-- `sysctls` (HIGH) - Modificación de parámetros del kernel vía sysctl
+- `device_access` (HIGH) - Host device access (/dev/*)
+- `sysctls` (HIGH) - Kernel parameter modification via sysctl
 
-## 📊 Distribución por Severidad
+## 📊 Distribution by Severity
 
-- **CRITICAL**: 2 reglas (secretos, montajes writable sensibles)
-- **HIGH**: 9 reglas (privileged, capabilities, seccomp, devices, sysctls, mounts)
-- **MEDIUM**: 12 reglas (network, security profiles, logs, images)
-- **LOW**: 8 reglas (recursos, restart, DNS, links)
-- **INFO**: 3 reglas (healthcheck, digest, hosts)
+- **CRITICAL**: 2 rules (secrets, writable sensitive mounts)
+- **HIGH**: 9 rules (privileged, capabilities, seccomp, devices, sysctls, mounts)
+- **MEDIUM**: 12 rules (network, security profiles, logs, images)
+- **LOW**: 8 rules (resources, restart, DNS, links)
+- **INFO**: 3 rules (healthcheck, digest, hosts)
 
-**Total: 34 reglas** (17 existentes + 17 nuevas)
+**Total: 36 rules** (17 existing + 19 new)
 
-## 🎯 Reglas Nuevas Agregadas
+## 🎯 New Rules Added
 
-### Montajes (3 reglas)
-- `mount_propagation` - Propagación peligrosa de montajes
-- `writable_sensitive_mounts` - Escritura en /etc, /boot, /lib
-- `tmpfs_exec` - tmpfs sin noexec
+### Mounts (3 rules)
+- `mount_propagation` - Dangerous mount propagation
+- `writable_sensitive_mounts` - Writing to /etc, /boot, /lib
+- `tmpfs_exec` - tmpfs without noexec
 
-### Red (4 reglas)
-- `port_all_interfaces` - Puertos en 0.0.0.0
-- `dns_settings` - DNS personalizado
-- `extra_hosts` - /etc/hosts personalizado
-- `network_links` - Links deprecados
+### Network (4 rules)
+- `port_all_interfaces` - Ports on 0.0.0.0
+- `dns_settings` - Custom DNS
+- `extra_hosts` - Custom /etc/hosts
+- `network_links` - Deprecated links
 
-### Logging (3 reglas)
-- `log_driver` - Sin logging centralizado
-- `log_size_limit` - Sin límites de logs
-- `healthcheck` - Sin health check
+### Logging (3 rules)
+- `log_driver` - No centralized logging
+- `log_size_limit` - No log limits
+- `healthcheck` - No health check
 
-### Imágenes (3 reglas)
-- `image_tag` - Tag 'latest'
-- `image_no_digest` - Sin digest
-- `outdated_image` - Imagen antigua
+### Images (3 rules)
+- `image_tag` - 'latest' tag
+- `image_no_digest` - No digest
+- `outdated_image` - Old image
 
-### Seguridad Runtime (6 reglas)
+### Runtime Security (6 rules)
 - `apparmor` - AppArmor disabled
 - `seccomp` - Seccomp unconfined
-- `no_new_privileges` - Permite escalada
-- `cgroup_parent` - CGroup custom
-- `device_access` - Acceso a devices
-- `sysctls` - Sysctls peligrosos
+- `no_new_privileges` - Allows escalation
+- `cgroup_parent` - Custom CGroup
+- `device_access` - Device access
+- `sysctls` - Dangerous sysctls
 
-## 🚀 Uso
+## 🚀 Usage
 
 ```bash
-# Escanear todos los contenedores
+# Scan all containers
 cargo run -- scan
 
-# Escanear solo contenedores running
+# Scan only running containers
 cargo run -- scan --state running
 
-# Usar solo reglas específicas
+# Use only specific rules
 cargo run -- scan --only privileged_mode,capabilities
 
-# Excluir reglas específicas
+# Exclude specific rules
 cargo run -- scan --exclude readonly_rootfs
 
-# Exportar a JSON
+# Export to JSON
 cargo run -- scan --format json --output results.json
 ```
 
-## 📝 Ejemplos de JSONPath
+## 📝 JSONPath Examples
 
-Las reglas usan JSONPath para extraer datos del Docker inspect API:
+Rules use JSONPath to extract data from the Docker inspect API:
 
 ```yaml
-# Detectar capabilities peligrosas
+# Detect dangerous capabilities
 jsonpath: "$.HostConfig.CapAdd[*]"
 regex: "SYS_ADMIN|ALL|NET_ADMIN"
 
-# Combinar múltiples campos
+# Combine multiple fields
 parts:
   - jsonpath: "$.Mounts[*].Source"
   - jsonpath: "$.Mounts[*].RW"
 separator: ":"
 regex: "^/etc:true$"
 
-# Verificar campos ausentes
+# Check for missing fields
 jsonpath: "$.Config.Healthcheck"
 missing: true
 ```
 
 ## 🔍 Container JSON Structure
 
-Las reglas inspeccionan la respuesta de `docker inspect`:
+Rules inspect the response from `docker inspect`:
 
 ```json
 {
@@ -201,7 +201,7 @@ Las reglas inspeccionan la respuesta de `docker inspect`:
 }
 ```
 
-## 📚 Referencias
+## 📚 References
 
 - [Docker Security Best Practices](https://docs.docker.com/engine/security/)
 - [CIS Docker Benchmark](https://www.cisecurity.org/benchmark/docker)
