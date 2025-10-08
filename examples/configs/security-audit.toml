@@ -1,0 +1,29 @@
+# Security Audit Configuration
+#
+# Focused on critical security issues for auditing and compliance.
+#
+# Usage:
+#   export VALERIS_CONFIG_FILE=examples/configs/security-audit.toml
+#   valeris scan
+
+[scan]
+# Only run critical security detectors
+only = [
+    "privileged_mode",        # Privileged container detection
+    "capabilities",           # Dangerous Linux capabilities
+    "secrets_in_env",        # Secrets in environment variables
+    "root_user",             # Running as root user
+    "writable_sensitive_mounts",  # Sensitive host mounts
+    "host_network",          # Host network mode
+    "host_ipc",              # Host IPC namespace
+    "host_pid"               # Host PID namespace
+]
+
+# Show high severity only
+min_severity = "high"
+
+[output]
+# Detailed colored table output
+format = "table"
+colors = true
+table_width = 140

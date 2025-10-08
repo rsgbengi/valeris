@@ -24,9 +24,10 @@ use crate::YamlRuleEngine;
 /// # Arguments
 ///
 /// * `rules_dir` - Path to directory containing YAML rule files
-/// * `only` - Optional comma-separated list of rule IDs to exclusively run
-/// * `exclude` - Optional comma-separated list of rule IDs to skip
-/// * `state` - Optional comma-separated list of container states to scan (e.g., "running,paused")
+/// * `only` - Optional vector of rule IDs to exclusively run
+/// * `exclude` - Optional vector of rule IDs to skip
+/// * `state` - Optional vector of container states to scan (e.g., ["running", "paused"])
+/// * `container` - Optional vector of container name/ID patterns to filter
 ///
 /// # Returns
 ///
@@ -40,15 +41,17 @@ use crate::YamlRuleEngine;
 /// * Invalid rule IDs are specified in `only` or `exclude`
 pub async fn scan_docker_with_yaml_detectors(
     rules_dir: PathBuf,
-    only: Option<String>,
-    exclude: Option<String>,
-    state: Option<String>,
+    only: Option<Vec<String>>,
+    exclude: Option<Vec<String>>,
+    state: Option<Vec<String>>,
+    container: Option<Vec<String>>,
 ) -> Result<Vec<ContainerResult>> {
     let engine = YamlRuleEngine::from_dir(&rules_dir)
         .with_context(|| format!("loading YAML detectors from {}", rules_dir.display()))?;
 
     let state_set = parse_state_set(&state);
-    let containers = get_containers(state_set.as_ref())
+    let container_patterns = parse_container_patterns(&container);
+    let containers = get_containers(state_set.as_ref(), container_patterns.as_ref())
         .await
         .context("Failed to connect to Docker daemon or list containers")?;
 
@@ -138,30 +141,47 @@ fn run_detectors_on_container(
 }
 
 
-/// Parses a comma-separated string into a normalized HashSet of lowercase strings.
+/// Converts a vector of strings into a normalized HashSet (lowercase, trimmed).
 ///
 /// # Arguments
 ///
-/// * `input` - Optional comma-separated string (e.g., "FOO, bar, BAZ")
+/// * `input` - Optional vector of strings to convert
 ///
 /// # Returns
 ///
-/// `Some(HashSet)` containing trimmed, lowercased values, or `None` if input is `None`
-fn parse_comma_separated_set(input: &Option<String>) -> Option<HashSet<String>> {
-    input.as_ref().map(|s| {
-        s.split(',')
+/// `Option<HashSet<String>>` with normalized values, or `None` if input is `None`
+fn parse_vec_to_set(input: &Option<Vec<String>>) -> Option<HashSet<String>> {
+    input.as_ref().map(|vec| {
+        vec.iter()
             .map(|item| item.trim().to_lowercase())
             .collect::<HashSet<_>>()
     })
 }
 
 // Convenience aliases for clarity
-fn parse_id_set(input: &Option<String>) -> Option<HashSet<String>> {
-    parse_comma_separated_set(input)
+fn parse_id_set(input: &Option<Vec<String>>) -> Option<HashSet<String>> {
+    parse_vec_to_set(input)
 }
 
-fn parse_state_set(input: &Option<String>) -> Option<HashSet<String>> {
-    parse_comma_separated_set(input)
+fn parse_state_set(input: &Option<Vec<String>>) -> Option<HashSet<String>> {
+    parse_vec_to_set(input)
+}
+
+/// Converts container name/ID patterns into a lowercase vector for matching.
+///
+/// # Arguments
+///
+/// * `input` - Optional vector of container name or ID patterns
+///
+/// # Returns
+///
+/// `Option<Vec<String>>` with lowercase patterns, or `None` if input is `None`
+fn parse_container_patterns(input: &Option<Vec<String>>) -> Option<Vec<String>> {
+    input.as_ref().map(|vec| {
+        vec.iter()
+            .map(|item| item.trim().to_lowercase())
+            .collect::<Vec<_>>()
+    })
 }
 
 /// Validates that provided rule IDs exist in the available set.
@@ -187,11 +207,12 @@ fn validate_ids(available: &HashSet<String>, provided: &Option<HashSet<String>>,
 }
 
 
-/// Fetches and inspects Docker containers, optionally filtered by state.
+/// Fetches and inspects Docker containers, optionally filtered by state and name/ID patterns.
 ///
 /// # Arguments
 ///
 /// * `state_filter` - Optional set of container states to include (e.g., "running", "exited")
+/// * `container_patterns` - Optional vector of name/ID patterns to match
 ///
 /// # Returns
 ///
@@ -203,7 +224,10 @@ fn validate_ids(available: &HashSet<String>, provided: &Option<HashSet<String>>,
 /// * Unable to connect to Docker socket
 /// * Container listing fails
 /// * Container inspection fails for any container
-async fn get_containers(state_filter: Option<&HashSet<String>>) -> Result<Vec<ContainerInspectResponse>> {
+async fn get_containers(
+    state_filter: Option<&HashSet<String>>,
+    container_patterns: Option<&Vec<String>>,
+) -> Result<Vec<ContainerInspectResponse>> {
     let docker = Docker::connect_with_socket_defaults()
         .context("Failed to connect to Docker socket")?;
 
@@ -218,6 +242,7 @@ async fn get_containers(state_filter: Option<&HashSet<String>>) -> Result<Vec<Co
     let mut result = Vec::new();
 
     for container in containers {
+        // Filter by state
         if let Some(filter) = state_filter {
             if let Some(state) = container.state.as_deref() {
                 if !filter.contains(&state.to_lowercase()) {
@@ -225,6 +250,45 @@ async fn get_containers(state_filter: Option<&HashSet<String>>) -> Result<Vec<Co
                 }
             }
         }
+
+        // Filter by container name/ID pattern
+        if let Some(patterns) = container_patterns {
+            let mut matched = false;
+
+            // Check container ID
+            if let Some(id) = container.id.as_deref() {
+                let id_lower = id.to_lowercase();
+                for pattern in patterns {
+                    if id_lower.starts_with(pattern) || id_lower.contains(pattern) {
+                        matched = true;
+                        break;
+                    }
+                }
+            }
+
+            // Check container names
+            if !matched {
+                if let Some(names) = &container.names {
+                    for name in names {
+                        let name_lower = name.trim_start_matches('/').to_lowercase();
+                        for pattern in patterns {
+                            if name_lower.contains(pattern) {
+                                matched = true;
+                                break;
+                            }
+                        }
+                        if matched {
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if !matched {
+                continue;
+            }
+        }
+
         if let Some(id) = container.id.as_deref() {
             let inspect = docker
                 .inspect_container(id, None::<InspectContainerOptions>)
@@ -243,7 +307,7 @@ mod tests {
 
     #[test]
     fn parse_id_set_normalizes_and_deduplicates() {
-        let input = Some("FOO, bar , foo".to_string());
+        let input = Some(vec!["FOO".to_string(), "bar".to_string(), "foo".to_string()]);
         let set = parse_id_set(&input).expect("some set");
         assert_eq!(set.len(), 2);
         assert!(set.contains("foo"));
@@ -252,7 +316,7 @@ mod tests {
 
     #[test]
     fn parse_state_set_handles_spaces() {
-        let input = Some("Running , Exited".to_string());
+        let input = Some(vec!["Running ".to_string(), " Exited".to_string()]);
         let set = parse_state_set(&input).expect("some set");
         assert!(set.contains("running"));
         assert!(set.contains("exited"));
@@ -265,5 +329,22 @@ mod tests {
         let provided: Option<HashSet<String>> = Some(["b", "c"].iter().map(|s| s.to_string()).collect());
         let result = validate_ids(&available, &provided, "--only");
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn parse_container_patterns_normalizes() {
+        let input = Some(vec!["Nginx ".to_string(), " REDIS".to_string(), "web-app".to_string()]);
+        let patterns = parse_container_patterns(&input).expect("some patterns");
+        assert_eq!(patterns.len(), 3);
+        assert_eq!(patterns[0], "nginx");
+        assert_eq!(patterns[1], "redis");
+        assert_eq!(patterns[2], "web-app");
+    }
+
+    #[test]
+    fn parse_container_patterns_none() {
+        let input: Option<Vec<String>> = None;
+        let patterns = parse_container_patterns(&input);
+        assert!(patterns.is_none());
     }
 }

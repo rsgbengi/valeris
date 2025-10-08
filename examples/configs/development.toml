@@ -1,0 +1,28 @@
+# Development Environment Configuration
+#
+# Relaxed settings for local development with reduced noise.
+#
+# Usage:
+#   export VALERIS_CONFIG_FILE=examples/configs/development.toml
+#   valeris scan
+
+[scan]
+# Only scan running containers
+default_state = ["running"]
+
+# Exclude noisy/low-priority rules
+exclude = [
+    "readonly_rootfs",
+    "log_driver",
+    "no_healthcheck",
+    "image_no_digest"
+]
+
+# Show low severity and above
+min_severity = "low"
+
+[output]
+# Human-readable colored table output
+format = "table"
+colors = true
+table_width = 120

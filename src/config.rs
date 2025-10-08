@@ -5,6 +5,8 @@
 
 use std::path::PathBuf;
 use std::io::IsTerminal;
+use serde::{Deserialize, Serialize};
+use anyhow::{Context, Result};
 
 /// Default URL for downloading rule releases from GitHub
 pub const DEFAULT_RULES_RELEASE_URL: &str =
@@ -12,6 +14,9 @@ pub const DEFAULT_RULES_RELEASE_URL: &str =
 
 /// Default environment variable for rules directory override
 pub const RULES_DIR_ENV: &str = "VALERIS_RULES_DIR";
+
+/// Environment variable for config file path override
+pub const CONFIG_FILE_ENV: &str = "VALERIS_CONFIG_FILE";
 
 /// Rules directory configuration
 pub struct RulesConfig {
@@ -114,6 +119,117 @@ impl AppConfig {
     pub fn without_auto_download(mut self) -> Self {
         self.rules.auto_download = false;
         self
+    }
+}
+
+// ────────────────────────────────────────────────────────────────────
+// FILE-BASED CONFIGURATION
+// ────────────────────────────────────────────────────────────────────
+
+/// Scan configuration from file
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[serde(default)]
+pub struct ScanConfig {
+    /// Default container states to scan
+    pub default_state: Option<Vec<String>>,
+    /// Default detectors to run (--only equivalent)
+    pub only: Option<Vec<String>>,
+    /// Detectors to always exclude
+    pub exclude: Option<Vec<String>>,
+    /// Container patterns to ignore
+    pub ignore_containers: Option<Vec<String>>,
+    /// Default minimum severity
+    pub min_severity: Option<String>,
+    /// Default fail-on threshold
+    pub fail_on: Option<String>,
+    /// Always run in quiet mode
+    pub quiet: Option<bool>,
+}
+
+/// Output configuration from file
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[serde(default)]
+pub struct FileOutputConfig {
+    /// Default output format
+    pub format: Option<String>,
+    /// Enable colored output
+    pub colors: Option<bool>,
+    /// Table width
+    pub table_width: Option<usize>,
+}
+
+/// Rules configuration from file
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[serde(default)]
+pub struct FileRulesConfig {
+    /// Custom rules directory
+    pub directory: Option<PathBuf>,
+    /// Auto-download rules
+    pub auto_download: Option<bool>,
+}
+
+/// Docker configuration from file
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[serde(default)]
+pub struct FileDockerConfig {
+    /// Connection timeout in seconds
+    pub timeout: Option<u64>,
+    /// Maximum parallel scans
+    pub max_parallel: Option<usize>,
+    /// Docker host
+    pub host: Option<String>,
+}
+
+/// Complete configuration file structure
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[serde(default)]
+pub struct ConfigFile {
+    pub scan: Option<ScanConfig>,
+    pub output: Option<FileOutputConfig>,
+    pub rules: Option<FileRulesConfig>,
+    pub docker: Option<FileDockerConfig>,
+}
+
+impl ConfigFile {
+    /// Loads configuration from TOML file
+    pub fn load(path: &PathBuf) -> Result<Self> {
+        let contents = std::fs::read_to_string(path)
+            .with_context(|| format!("Failed to read config file: {}", path.display()))?;
+
+        let config: ConfigFile = toml::from_str(&contents)
+            .with_context(|| format!("Failed to parse config file: {}", path.display()))?;
+
+        Ok(config)
+    }
+
+    /// Tries to load configuration from default locations
+    pub fn load_default() -> Result<Option<Self>> {
+        // Try environment variable first
+        if let Ok(path_str) = std::env::var(CONFIG_FILE_ENV) {
+            let path = PathBuf::from(path_str);
+            if path.exists() {
+                return Ok(Some(Self::load(&path)?));
+            }
+        }
+
+        // Try XDG config directory
+        if let Some(config_dir) = dirs::config_dir() {
+            let path = config_dir.join("valeris").join("config.toml");
+            if path.exists() {
+                return Ok(Some(Self::load(&path)?));
+            }
+        }
+
+        // Try home directory
+        if let Some(home_dir) = dirs::home_dir() {
+            let path = home_dir.join(".valeris.toml");
+            if path.exists() {
+                return Ok(Some(Self::load(&path)?));
+            }
+        }
+
+        // No config file found
+        Ok(None)
     }
 }
 

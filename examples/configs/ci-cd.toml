@@ -1,0 +1,31 @@
+# CI/CD Pipeline Configuration
+#
+# Optimized for CI/CD pipelines with automated security gates.
+#
+# Usage:
+#   export VALERIS_CONFIG_FILE=examples/configs/ci-cd.toml
+#   valeris scan
+#
+# Pipeline example:
+#   - name: Security Scan
+#     run: |
+#       export VALERIS_CONFIG_FILE=examples/configs/ci-cd.toml
+#       valeris scan || exit 1
+
+[scan]
+# Only scan running containers
+default_state = ["running"]
+
+# Show medium severity and above
+min_severity = "medium"
+
+# Fail on high severity findings
+fail_on = "high"
+
+# Quiet mode - no output, only exit code
+quiet = true
+
+[output]
+# JSON format for CI/CD integration
+format = "json"
+colors = false

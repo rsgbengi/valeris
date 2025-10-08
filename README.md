@@ -33,7 +33,11 @@
 - ✅ Detects: privileged mode, host networking/IPC, dangerous capabilities
 - ✅ Checks: exposed ports, PID limits, root user, user namespaces
 - ✅ Filter by container state (`--state running`)
+- ✅ Filter by container name or ID (`--container nginx`)
+- ✅ Filter by severity level (`--severity high`, `--min-severity medium`)
 - ✅ Selective scanning with `--only` and `--exclude`
+- ✅ CI/CD integration with `--fail-on` and `--quiet` modes
+- ✅ Command aliases for faster workflow (`scan` → `s`, `list-plugins` → `ls`)
 
 ### Dockerfile Scanning 📄
 - ✅ Static analysis of Dockerfiles
@@ -85,6 +89,17 @@ sudo mv target/release/valeris /usr/local/bin
 ```bash
 # Scan all running containers with the default rule set
 valeris scan
+# Or use the short alias
+valeris s
+
+# Filter by container name or ID
+valeris scan --container nginx
+valeris scan -c redis,postgres
+valeris scan --container web-app-1
+
+# Filter by container state
+valeris scan --state running
+valeris scan --state running,paused
 
 # Run only specific detectors
 valeris scan --only exposed_ports,capabilities
@@ -92,8 +107,16 @@ valeris scan --only exposed_ports,capabilities
 # Exclude noisy checks
 valeris scan --exclude readonly_rootfs
 
-# Filter by container state
-valeris scan --state running
+# Filter by severity
+valeris scan --severity high
+valeris scan --min-severity medium
+
+# CI/CD integration - fail on critical findings
+valeris scan --fail-on high
+valeris scan --quiet --fail-on medium  # Quiet mode for scripts
+
+# Combine filters for precise targeting
+valeris scan --state running --container nginx --min-severity high
 
 # Export results to JSON
 valeris scan --format json --output results.json
@@ -107,6 +130,8 @@ valeris scan --format csv --output findings.csv
 ```bash
 # Scan a Dockerfile
 valeris docker-file --path ./Dockerfile --rules ./rules/dockerfile
+# Or use the short alias
+valeris df -p ./Dockerfile -r ./rules/dockerfile
 
 # Export Dockerfile scan to JSON
 valeris docker-file --path ./Dockerfile --rules ./rules/dockerfile --format json --output scan.json
@@ -120,6 +145,11 @@ valeris docker-file --path ./Dockerfile --rules ./rules/dockerfile --format csv
 ```bash
 # List all available detectors
 valeris list-plugins
+# Or use the short alias
+valeris ls
+
+# Filter plugins by target
+valeris list-plugins --target docker
 
 # Enable verbose logging
 RUST_LOG=debug valeris scan
@@ -270,13 +300,46 @@ src/
 
 ## 📝 Configuration
 
+### Configuration File
+
+Valeris supports persistent configuration via TOML files. Create a config file to avoid repeating common flags:
+
+```bash
+# Check config status
+valeris config
+
+# Create config file
+mkdir -p ~/.config/valeris
+cp valeris.toml.example ~/.config/valeris/config.toml
+vi ~/.config/valeris/config.toml
+```
+
+**Config file locations** (checked in order):
+1. `$VALERIS_CONFIG_FILE` (environment variable)
+2. `~/.config/valeris/config.toml` (XDG config dir)
+3. `~/.valeris.toml` (home directory)
+
+**Example configuration:**
+```toml
+[scan]
+default_state = ["running"]
+exclude = ["readonly_rootfs", "log_driver"]
+min_severity = "medium"
+
+[output]
+format = "table"
+colors = true
+```
+
 ### Environment Variables
 
+- `VALERIS_CONFIG_FILE` - Override config file location
 - `VALERIS_RULES_DIR` - Override default rules directory
 - `RUST_LOG` - Set logging level (`debug`, `info`, `warn`, `error`)
 
 ### Default Locations
 
+- **Config**: `~/.config/valeris/config.toml`
 - **Rules**: `$XDG_DATA_HOME/valeris/detectors` or `~/.local/share/valeris/detectors`
 - **Runtime rules**: `detectors/runtime/docker/*.yaml`
 - **Dockerfile rules**: `detectors/dockerfile/*.yaml`

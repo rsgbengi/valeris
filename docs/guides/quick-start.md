@@ -34,12 +34,21 @@ valeris --help
 ```bash
 # Scan all containers
 valeris scan
+# Or use the short alias
+valeris s
 
 # Scan only running containers
 valeris scan --state running
 
+# Scan specific containers by name or ID
+valeris scan --container nginx
+valeris scan -c redis,postgres
+
 # Scan exited containers
 valeris scan --state exited
+
+# Combine filters
+valeris scan --state running --container web-app
 ```
 
 **Output:**
@@ -68,6 +77,8 @@ valeris scan --state exited
 ```bash
 # Basic scan
 valeris docker-file --path ./Dockerfile --rules ./rules/dockerfile
+# Or use the short alias with shortcuts
+valeris df -p ./Dockerfile -r ./rules/dockerfile
 
 # Scan example files
 valeris docker-file --path examples/bad-dockerfile --rules ./rules/dockerfile
@@ -131,7 +142,20 @@ valeris scan --exclude readonly_rootfs,log_driver,no_healthcheck
 
 ### 3. CI/CD Pipeline
 
-Fail build on critical Dockerfile issues:
+Use built-in `--fail-on` flag to fail builds automatically:
+
+```bash
+#!/bin/bash
+# Fail on high severity findings
+if ! valeris scan --quiet --fail-on high; then
+  echo "❌ Critical security issues found!"
+  exit 1
+fi
+
+echo "✅ Security scan passed"
+```
+
+Alternative with Dockerfile scanning:
 
 ```bash
 #!/bin/bash
@@ -147,6 +171,8 @@ fi
 
 echo "✅ No critical issues found"
 ```
+
+See also: [CI/CD Integration Guide](../CI-CD-INTEGRATION.md)
 
 ### 4. Compliance Reporting
 
@@ -190,7 +216,14 @@ valeris scan --state running --format csv --output compliance.csv
 See what rules are loaded:
 
 ```bash
+# List all detectors
 valeris list-plugins
+# Or use the short alias
+valeris ls
+
+# Filter by target platform
+valeris list-plugins --target docker
+valeris ls -t docker
 ```
 
 Output:
@@ -206,9 +239,47 @@ Available YAML detectors:
 
 ## Configuration
 
+### Configuration File
+
+Valeris supports persistent configuration via TOML files:
+
+```bash
+# Create config directory
+mkdir -p ~/.config/valeris
+
+# Copy example config
+cp valeris.toml.example ~/.config/valeris/config.toml
+
+# Edit to your preferences
+vi ~/.config/valeris/config.toml
+
+# Verify configuration
+valeris config
+```
+
+**Example `~/.config/valeris/config.toml`:**
+```toml
+[scan]
+default_state = ["running"]
+min_severity = "medium"
+exclude = ["readonly_rootfs", "log_driver"]
+
+[output]
+format = "table"
+colors = true
+```
+
+**Configuration precedence:** CLI arguments always override config file values.
+
+See also: [Configuration Guide](../CONFIGURATION.md)
+
 ### Environment Variables
 
 ```bash
+# Custom config file location
+export VALERIS_CONFIG_FILE=/etc/valeris/config.toml
+valeris scan
+
 # Custom rules location
 export VALERIS_RULES_DIR=/opt/valeris/custom-rules
 valeris scan
@@ -241,6 +312,8 @@ valeris scan --only privileged_mode,capabilities
 
 # Exclude specific detectors
 valeris scan --exclude log_driver,image_no_digest
+
+# Note: --only and --exclude cannot be used together
 ```
 
 ### By Container State
@@ -256,6 +329,42 @@ valeris scan --state exited
 valeris scan --state "running,paused"
 ```
 
+### By Container Name or ID
+
+```bash
+# Scan specific container by name
+valeris scan --container nginx
+valeris scan -c web-app
+
+# Scan multiple containers
+valeris scan --container nginx,redis,postgres
+
+# Search by partial name or ID
+valeris scan --container app-  # Matches app-1, app-2, etc.
+valeris scan -c abc123         # Match by container ID prefix
+```
+
+### By Severity
+
+```bash
+# Show only high severity findings
+valeris scan --severity high
+
+# Show only medium and high
+valeris scan --severity medium,high
+
+# Show findings at or above medium
+valeris scan --min-severity medium
+
+# Note: --severity and --min-severity cannot be used together
+```
+
+**Severity levels (in order):**
+- `informative` - Informational findings
+- `low` - Low risk issues
+- `medium` - Medium risk issues
+- `high` - High risk/critical issues
+
 ### Combining Filters
 
 ```bash
@@ -263,6 +372,15 @@ valeris scan --state "running,paused"
 valeris scan \
   --state running \
   --only privileged_mode,capabilities,secrets_in_env,root_user
+
+# Specific containers with targeted scans
+valeris scan \
+  --container nginx,redis \
+  --state running \
+  --only exposed_ports,capabilities
+
+# Filter by state and container name with severity
+valeris scan --state running --container web- --min-severity high
 ```
 
 ## Troubleshooting
@@ -303,8 +421,9 @@ RUST_LOG=debug valeris scan 2> debug.log
 
 ## Next Steps
 
+- [CLI Reference](../CLI.md) - Complete CLI documentation
+- [Configuration Guide](../CONFIGURATION.md) - Detailed configuration options
+- [CI/CD Integration](../CI-CD-INTEGRATION.md) - Set up automated scanning
 - [Architecture Overview](../architecture/overview.md) - Understand how Valeris works
 - [Dockerfile Rules](../rules/dockerfile-rules.md) - Full list of Dockerfile detectors
 - [Runtime Rules](../rules/runtime-rules.md) - Full list of runtime detectors
-- [CI/CD Integration](ci-cd-integration.md) - Set up automated scanning
-- [Custom Rules](custom-rules.md) - Write your own detectors

@@ -193,7 +193,10 @@ cargo clippy -- -D warnings
 /// # Arguments
 ///
 /// * `rules_dir` - Path to directory containing YAML rule files
-/// * `state` - Optional container state filter (e.g., "running")
+/// * `only` - Optional vector of rule IDs to exclusively run
+/// * `exclude` - Optional vector of rule IDs to skip
+/// * `state` - Optional vector of container states to scan
+/// * `container` - Optional vector of container name/ID patterns to filter
 ///
 /// # Returns
 ///
@@ -210,12 +213,18 @@ cargo clippy -- -D warnings
 /// ```rust
 /// let results = scan_docker_with_yaml_detectors(
 ///     PathBuf::from("./rules"),
-///     Some("running".to_string())
+///     Some(vec!["exposed_ports".to_string()]),  // only
+///     None,                                       // exclude
+///     Some(vec!["running".to_string()]),         // state
+///     Some(vec!["nginx".to_string()])            // container
 /// ).await?;
 /// ```
 pub async fn scan_docker_with_yaml_detectors(
     rules_dir: PathBuf,
-    state: Option<String>,
+    only: Option<Vec<String>>,
+    exclude: Option<Vec<String>>,
+    state: Option<Vec<String>>,
+    container: Option<Vec<String>>,
 ) -> Result<Vec<ContainerResult>> {
     // Implementation
 }
@@ -231,11 +240,20 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_parse_comma_separated_set() {
-        let input = Some("foo,bar,baz".to_string());
-        let result = parse_comma_separated_set(&input).unwrap();
-        assert_eq!(result.len(), 3);
+    fn test_parse_vec_to_set() {
+        let input = Some(vec!["foo".to_string(), "bar".to_string()]);
+        let result = parse_vec_to_set(&input).unwrap();
+        assert_eq!(result.len(), 2);
         assert!(result.contains("foo"));
+        assert!(result.contains("bar"));
+    }
+
+    #[test]
+    fn test_parse_container_patterns() {
+        let input = Some(vec!["Nginx ".to_string(), " REDIS".to_string()]);
+        let patterns = parse_container_patterns(&input).unwrap();
+        assert_eq!(patterns[0], "nginx");
+        assert_eq!(patterns[1], "redis");
     }
 }
 ```

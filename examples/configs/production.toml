@@ -1,0 +1,29 @@
+# Production Environment Configuration
+#
+# Strict settings for production environments.
+#
+# Usage:
+#   export VALERIS_CONFIG_FILE=examples/configs/production.toml
+#   valeris scan
+
+[scan]
+# Only scan running containers
+default_state = ["running"]
+
+# Show medium severity and above
+min_severity = "medium"
+
+# Fail builds on high severity findings
+fail_on = "high"
+
+[output]
+# JSON output for logging and analysis
+format = "json"
+colors = false
+
+[docker]
+# Increased timeout for production environments
+timeout = 60
+
+# Parallel scanning for performance
+max_parallel = 10

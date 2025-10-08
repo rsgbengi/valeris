@@ -11,7 +11,7 @@ pub struct Finding {
     pub line: Option<usize>,
 }
 
-#[derive(Debug, Serialize,Deserialize, Clone, PartialEq, Eq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum RiskLevel {
     Informative,
     Low,
