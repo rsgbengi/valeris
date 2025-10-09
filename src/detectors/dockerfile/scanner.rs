@@ -32,13 +32,20 @@ use crate::cli::OutputFormat;
 ///
 /// * `path` - Path to the Dockerfile to scan
 /// * `rules_dir` - Directory containing YAML rule definitions
+/// * `only` - Optional list of rule IDs to run exclusively
+/// * `exclude` - Optional list of rule IDs to exclude
+/// * `severity` - Optional exact severity levels to filter
+/// * `min_severity` - Optional minimum severity threshold
+/// * `fail_on` - Optional severity level to trigger exit code 1
+/// * `quiet` - Suppress all output
 /// * `format` - Output format (Table, JSON, or CSV)
 /// * `output_file` - Optional file path to write output to
 ///
 /// # Returns
 ///
-/// `Ok(())` if the scan completed successfully, or an error if the file
-/// couldn't be read or parsed
+/// Returns `Ok(bool)` where the boolean indicates whether the scan should fail
+/// (true if fail_on threshold was met), or an error if the file couldn't be
+/// read or parsed
 ///
 /// # Example
 ///
@@ -50,23 +57,39 @@ use crate::cli::OutputFormat;
 /// let result = scan_dockerfile(
 ///     PathBuf::from("./Dockerfile"),
 ///     PathBuf::from("./rules/dockerfile"),
+///     None,
+///     None,
+///     None,
+///     None,
+///     None,
+///     false,
 ///     OutputFormat::Table,
 ///     None
 /// );
 /// ```
+#[allow(clippy::too_many_arguments)]
 pub fn scan_dockerfile(
     path: PathBuf,
     rules_dir: PathBuf,
+    only: Option<Vec<String>>,
+    exclude: Option<Vec<String>>,
+    severity: Option<Vec<crate::cli::SeverityLevel>>,
+    min_severity: Option<crate::cli::SeverityLevel>,
+    fail_on: Option<crate::cli::SeverityLevel>,
+    quiet: bool,
     format: OutputFormat,
     output_file: Option<PathBuf>,
-) -> anyhow::Result<()> {
+) -> anyhow::Result<bool> {
     let content = read_to_string(&path)
         .with_context(|| format!("reading {}", path.display()))?;
 
     let dockerfile = Dockerfile::parse(&content)
         .map_err(|e| anyhow!("Error parsing Dockerfile: {:?}", e))?;
 
-    let ruleset = yaml_rules::load_rules_from_dir(rules_dir.as_path())?;
+    let mut ruleset = yaml_rules::load_rules_from_dir(rules_dir.as_path())?;
+
+    // Apply rule filtering (only/exclude)
+    filter_rules(&mut ruleset.rules, only.as_ref(), exclude.as_ref());
 
     let mut all_findings = Vec::new();
 
@@ -79,10 +102,18 @@ pub fn scan_dockerfile(
     // Scan at file level
     all_findings.extend(scan_file(&dockerfile, &ruleset.rules, &path));
 
-    // Output results based on format
-    output_results(&path, &all_findings, format, output_file)?;
+    // Apply severity filtering
+    filter_findings_by_severity(&mut all_findings, severity.as_ref(), min_severity.as_ref());
 
-    Ok(())
+    // Check if we should fail based on fail_on threshold
+    let should_fail = should_fail_scan(&all_findings, fail_on.as_ref());
+
+    // Output results based on format (unless quiet mode)
+    if !quiet {
+        output_results(&path, &all_findings, format, output_file)?;
+    }
+
+    Ok(should_fail)
 }
 
 /// Outputs scan results in the specified format.
@@ -300,6 +331,105 @@ fn severity_to_risk(severity: &Severity) -> RiskLevel {
         Severity::Low => RiskLevel::Low,
         Severity::Medium => RiskLevel::Medium,
         Severity::High | Severity::Critical => RiskLevel::High,
+    }
+}
+
+/// Filters rules based on only/exclude sets.
+///
+/// # Arguments
+///
+/// * `rules` - Mutable reference to rules vector
+/// * `only` - Optional set of rule IDs to include exclusively
+/// * `exclude` - Optional set of rule IDs to exclude
+fn filter_rules(
+    rules: &mut Vec<Rule>,
+    only: Option<&Vec<String>>,
+    exclude: Option<&Vec<String>>,
+) {
+    use std::collections::HashSet;
+
+    if let Some(only_set) = only {
+        let only_ids: HashSet<&str> = only_set.iter().map(|s| s.as_str()).collect();
+        rules.retain(|rule| {
+            let rule_id = get_rule_id(rule);
+            only_ids.contains(rule_id)
+        });
+    } else if let Some(exclude_set) = exclude {
+        let exclude_ids: HashSet<&str> = exclude_set.iter().map(|s| s.as_str()).collect();
+        rules.retain(|rule| {
+            let rule_id = get_rule_id(rule);
+            !exclude_ids.contains(rule_id)
+        });
+    }
+}
+
+/// Gets the rule ID from a Rule enum.
+fn get_rule_id(rule: &Rule) -> &str {
+    match rule {
+        Rule::Instruction { id, .. } => id,
+        Rule::Stage { id, .. } => id,
+        Rule::File { id, .. } => id,
+    }
+}
+
+/// Filters findings by severity level(s).
+///
+/// # Arguments
+///
+/// * `findings` - Mutable reference to findings vector
+/// * `severity` - Optional exact severity levels to match
+/// * `min_severity` - Optional minimum severity threshold
+fn filter_findings_by_severity(
+    findings: &mut Vec<Finding>,
+    severity: Option<&Vec<crate::cli::SeverityLevel>>,
+    min_severity: Option<&crate::cli::SeverityLevel>,
+) {
+    if let Some(severity_levels) = severity {
+        // Filter by exact severity match
+        let target_risks: Vec<RiskLevel> = severity_levels
+            .iter()
+            .map(severity_level_to_risk)
+            .collect();
+
+        findings.retain(|f| target_risks.contains(&f.risk));
+    } else if let Some(min_sev) = min_severity {
+        // Filter by minimum severity
+        let min_risk = severity_level_to_risk(min_sev);
+        findings.retain(|f| f.risk >= min_risk);
+    }
+}
+
+/// Converts CLI SeverityLevel to RiskLevel.
+fn severity_level_to_risk(level: &crate::cli::SeverityLevel) -> RiskLevel {
+    use crate::cli::SeverityLevel;
+
+    match level {
+        SeverityLevel::Informative => RiskLevel::Informative,
+        SeverityLevel::Low => RiskLevel::Low,
+        SeverityLevel::Medium => RiskLevel::Medium,
+        SeverityLevel::High => RiskLevel::High,
+    }
+}
+
+/// Determines if the scan should fail based on fail_on threshold.
+///
+/// # Arguments
+///
+/// * `findings` - Findings from the scan
+/// * `fail_on` - Optional minimum severity level to trigger failure
+///
+/// # Returns
+///
+/// `true` if any finding meets or exceeds the fail_on threshold
+fn should_fail_scan(
+    findings: &[Finding],
+    fail_on: Option<&crate::cli::SeverityLevel>,
+) -> bool {
+    if let Some(threshold) = fail_on {
+        let threshold_risk = severity_level_to_risk(threshold);
+        findings.iter().any(|f| f.risk >= threshold_risk)
+    } else {
+        false
     }
 }
 

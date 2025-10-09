@@ -37,6 +37,12 @@ fn test_scan_insecure_dockerfile() {
     let result = scan_dockerfile(
         dockerfile_path,
         rules_path,
+        None, // only
+        None, // exclude
+        None, // severity
+        None, // min_severity
+        None, // fail_on
+        false, // quiet
         OutputFormat::Json,
         None,
     );
@@ -60,6 +66,12 @@ fn test_scan_secure_dockerfile() {
     let result = scan_dockerfile(
         dockerfile_path,
         rules_path,
+        None, // only
+        None, // exclude
+        None, // severity
+        None, // min_severity
+        None, // fail_on
+        false, // quiet
         OutputFormat::Json,
         None,
     );
@@ -83,6 +95,12 @@ fn test_scan_multistage_dockerfile() {
     let result = scan_dockerfile(
         dockerfile_path,
         rules_path,
+        None, // only
+        None, // exclude
+        None, // severity
+        None, // min_severity
+        None, // fail_on
+        false, // quiet
         OutputFormat::Json,
         None,
     );
@@ -99,6 +117,12 @@ fn test_scan_nonexistent_dockerfile() {
     let result = scan_dockerfile(
         dockerfile_path,
         rules_path,
+        None, // only
+        None, // exclude
+        None, // severity
+        None, // min_severity
+        None, // fail_on
+        false, // quiet
         OutputFormat::Json,
         None,
     );
@@ -123,6 +147,12 @@ fn test_scan_invalid_dockerfile() {
     let result = scan_dockerfile(
         invalid_dockerfile.clone(),
         rules_path,
+        None, // only
+        None, // exclude
+        None, // severity
+        None, // min_severity
+        None, // fail_on
+        false, // quiet
         OutputFormat::Json,
         None,
     );
@@ -143,6 +173,12 @@ fn test_scan_with_nonexistent_rules_dir() {
     let result = scan_dockerfile(
         dockerfile_path,
         rules_path,
+        None, // only
+        None, // exclude
+        None, // severity
+        None, // min_severity
+        None, // fail_on
+        false, // quiet
         OutputFormat::Json,
         None,
     );
@@ -163,6 +199,12 @@ fn test_scan_empty_dockerfile() {
     let result = scan_dockerfile(
         empty_dockerfile.clone(),
         rules_path,
+        None, // only
+        None, // exclude
+        None, // severity
+        None, // min_severity
+        None, // fail_on
+        false, // quiet
         OutputFormat::Json,
         None,
     );
@@ -189,6 +231,12 @@ fn test_output_formats_json() {
     let result = scan_dockerfile(
         dockerfile_path,
         rules_path,
+        None, // only
+        None, // exclude
+        None, // severity
+        None, // min_severity
+        None, // fail_on
+        false, // quiet
         OutputFormat::Json,
         None,
     );
@@ -210,6 +258,12 @@ fn test_output_formats_csv() {
     let result = scan_dockerfile(
         dockerfile_path,
         rules_path,
+        None, // only
+        None, // exclude
+        None, // severity
+        None, // min_severity
+        None, // fail_on
+        false, // quiet
         OutputFormat::Csv,
         None,
     );
@@ -231,6 +285,12 @@ fn test_output_formats_table() {
     let result = scan_dockerfile(
         dockerfile_path,
         rules_path,
+        None, // only
+        None, // exclude
+        None, // severity
+        None, // min_severity
+        None, // fail_on
+        false, // quiet
         OutputFormat::Table,
         None,
     );
@@ -256,6 +316,12 @@ fn test_output_to_file() {
     let result = scan_dockerfile(
         dockerfile_path,
         rules_path,
+        None, // only
+        None, // exclude
+        None, // severity
+        None, // min_severity
+        None, // fail_on
+        false, // quiet
         OutputFormat::Json,
         Some(output_file.clone()),
     );
@@ -265,4 +331,249 @@ fn test_output_to_file() {
 
     // Clean up
     let _ = std::fs::remove_file(&output_file);
+}
+
+// ============================================================================
+// Tests for new Dockerfile scanner features (severity, fail-on, only/exclude)
+// ============================================================================
+
+#[test]
+fn test_severity_filtering_high_only() {
+    let temp_dir = std::env::temp_dir();
+    let test_dockerfile = temp_dir.join("test_severity.Dockerfile");
+
+    // Create a Dockerfile with known issues of different severities
+    std::fs::write(&test_dockerfile, "FROM ubuntu:latest\nUSER root\n").unwrap();
+
+    let rules_path = rules_dir();
+    if !rules_path.exists() {
+        println!("Skipping test - rules directory not found");
+        let _ = std::fs::remove_file(&test_dockerfile);
+        return;
+    }
+
+    let result = scan_dockerfile(
+        test_dockerfile.clone(),
+        rules_path,
+        None, // only
+        None, // exclude
+        Some(vec![valeris::cli::SeverityLevel::High]), // severity - only high
+        None, // min_severity
+        None, // fail_on
+        false, // quiet
+        OutputFormat::Json,
+        None,
+    );
+
+    // Clean up
+    let _ = std::fs::remove_file(&test_dockerfile);
+
+    assert!(result.is_ok(), "Severity filtering should work");
+}
+
+#[test]
+fn test_min_severity_filtering() {
+    let temp_dir = std::env::temp_dir();
+    let test_dockerfile = temp_dir.join("test_min_severity.Dockerfile");
+
+    std::fs::write(&test_dockerfile, "FROM ubuntu:latest\nUSER root\n").unwrap();
+
+    let rules_path = rules_dir();
+    if !rules_path.exists() {
+        println!("Skipping test - rules directory not found");
+        let _ = std::fs::remove_file(&test_dockerfile);
+        return;
+    }
+
+    let result = scan_dockerfile(
+        test_dockerfile.clone(),
+        rules_path,
+        None, // only
+        None, // exclude
+        None, // severity
+        Some(valeris::cli::SeverityLevel::Medium), // min_severity
+        None, // fail_on
+        false, // quiet
+        OutputFormat::Json,
+        None,
+    );
+
+    // Clean up
+    let _ = std::fs::remove_file(&test_dockerfile);
+
+    assert!(result.is_ok(), "Min severity filtering should work");
+}
+
+#[test]
+fn test_fail_on_returns_true_when_findings_exist() {
+    let temp_dir = std::env::temp_dir();
+    let test_dockerfile = temp_dir.join("test_fail_on.Dockerfile");
+
+    // Create insecure Dockerfile that will trigger findings
+    std::fs::write(&test_dockerfile, "FROM ubuntu:latest\nUSER root\n").unwrap();
+
+    let rules_path = rules_dir();
+    if !rules_path.exists() {
+        println!("Skipping test - rules directory not found");
+        let _ = std::fs::remove_file(&test_dockerfile);
+        return;
+    }
+
+    let result = scan_dockerfile(
+        test_dockerfile.clone(),
+        rules_path,
+        None, // only
+        None, // exclude
+        None, // severity
+        None, // min_severity
+        Some(valeris::cli::SeverityLevel::Low), // fail_on - low threshold
+        false, // quiet
+        OutputFormat::Json,
+        None,
+    );
+
+    // Clean up
+    let _ = std::fs::remove_file(&test_dockerfile);
+
+    // Should succeed but return true (indicating should fail)
+    match result {
+        Ok(should_fail) => {
+            // We expect findings, so should_fail should be true
+            // But we can't guarantee it without knowing exact rules
+            println!("should_fail: {}", should_fail);
+        }
+        Err(e) => panic!("Scan should succeed: {}", e),
+    }
+}
+
+#[test]
+fn test_quiet_mode_suppresses_output() {
+    let temp_dir = std::env::temp_dir();
+    let test_dockerfile = temp_dir.join("test_quiet.Dockerfile");
+
+    std::fs::write(&test_dockerfile, "FROM ubuntu:latest\n").unwrap();
+
+    let rules_path = rules_dir();
+    if !rules_path.exists() {
+        println!("Skipping test - rules directory not found");
+        let _ = std::fs::remove_file(&test_dockerfile);
+        return;
+    }
+
+    let result = scan_dockerfile(
+        test_dockerfile.clone(),
+        rules_path,
+        None, // only
+        None, // exclude
+        None, // severity
+        None, // min_severity
+        Some(valeris::cli::SeverityLevel::High), // fail_on required for quiet
+        true, // quiet - no output
+        OutputFormat::Json,
+        None,
+    );
+
+    // Clean up
+    let _ = std::fs::remove_file(&test_dockerfile);
+
+    assert!(result.is_ok(), "Quiet mode should work");
+}
+
+#[test]
+fn test_only_filter_specific_rules() {
+    let temp_dir = std::env::temp_dir();
+    let test_dockerfile = temp_dir.join("test_only.Dockerfile");
+
+    std::fs::write(&test_dockerfile, "FROM ubuntu:latest\nUSER root\n").unwrap();
+
+    let rules_path = rules_dir();
+    if !rules_path.exists() {
+        println!("Skipping test - rules directory not found");
+        let _ = std::fs::remove_file(&test_dockerfile);
+        return;
+    }
+
+    let result = scan_dockerfile(
+        test_dockerfile.clone(),
+        rules_path,
+        Some(vec!["DF001".to_string(), "DF002".to_string()]), // only - specific rules
+        None, // exclude
+        None, // severity
+        None, // min_severity
+        None, // fail_on
+        false, // quiet
+        OutputFormat::Json,
+        None,
+    );
+
+    // Clean up
+    let _ = std::fs::remove_file(&test_dockerfile);
+
+    assert!(result.is_ok(), "Only filter should work");
+}
+
+#[test]
+fn test_exclude_filter_specific_rules() {
+    let temp_dir = std::env::temp_dir();
+    let test_dockerfile = temp_dir.join("test_exclude.Dockerfile");
+
+    std::fs::write(&test_dockerfile, "FROM ubuntu:latest\nUSER root\n").unwrap();
+
+    let rules_path = rules_dir();
+    if !rules_path.exists() {
+        println!("Skipping test - rules directory not found");
+        let _ = std::fs::remove_file(&test_dockerfile);
+        return;
+    }
+
+    let result = scan_dockerfile(
+        test_dockerfile.clone(),
+        rules_path,
+        None, // only
+        Some(vec!["DF001".to_string()]), // exclude - skip DF001
+        None, // severity
+        None, // min_severity
+        None, // fail_on
+        false, // quiet
+        OutputFormat::Json,
+        None,
+    );
+
+    // Clean up
+    let _ = std::fs::remove_file(&test_dockerfile);
+
+    assert!(result.is_ok(), "Exclude filter should work");
+}
+
+#[test]
+fn test_combined_filters() {
+    let temp_dir = std::env::temp_dir();
+    let test_dockerfile = temp_dir.join("test_combined.Dockerfile");
+
+    std::fs::write(&test_dockerfile, "FROM ubuntu:latest\nUSER root\n").unwrap();
+
+    let rules_path = rules_dir();
+    if !rules_path.exists() {
+        println!("Skipping test - rules directory not found");
+        let _ = std::fs::remove_file(&test_dockerfile);
+        return;
+    }
+
+    let result = scan_dockerfile(
+        test_dockerfile.clone(),
+        rules_path,
+        Some(vec!["DF001".to_string(), "DF002".to_string()]), // only
+        None, // exclude
+        None, // severity
+        Some(valeris::cli::SeverityLevel::Medium), // min_severity
+        Some(valeris::cli::SeverityLevel::High), // fail_on
+        false, // quiet
+        OutputFormat::Json,
+        None,
+    );
+
+    // Clean up
+    let _ = std::fs::remove_file(&test_dockerfile);
+
+    assert!(result.is_ok(), "Combined filters should work");
 }

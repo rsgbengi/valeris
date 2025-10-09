@@ -49,7 +49,7 @@ fn severity_to_risk(severity: &SeverityLevel) -> RiskLevel {
 
 /// Filters findings by severity
 fn filter_by_severity(
-    results: &mut Vec<docker::model::ContainerResult>,
+    results: &mut [docker::model::ContainerResult],
     severity: Option<&Vec<SeverityLevel>>,
     min_severity: Option<&SeverityLevel>,
 ) {
@@ -184,17 +184,40 @@ where
         Commands::DockerFile {
             path,
             rules,
+            only,
+            exclude,
+            severity,
+            min_severity,
+            fail_on,
+            quiet,
             format,
             output,
         } => {
             let is_table = matches!(format, cli::OutputFormat::Table);
-            match scan_dockerfile(path, rules, format, output) {
-                Ok(_) => {
-                    if is_table {
+            match scan_dockerfile(
+                path,
+                rules,
+                only,
+                exclude,
+                severity,
+                min_severity,
+                fail_on,
+                quiet,
+                format,
+                output
+            ) {
+                Ok(should_fail) => {
+                    if is_table && !quiet {
                         println!("Dockerfile processed successfully");
                     }
+                    if should_fail {
+                        std::process::exit(1);
+                    }
                 }
-                Err(e) => eprintln!("Error: {e:?}"),
+                Err(e) => {
+                    eprintln!("Error: {e:?}");
+                    std::process::exit(1);
+                }
             }
         }
 

@@ -42,8 +42,12 @@
 ### Dockerfile Scanning 📄
 - ✅ Static analysis of Dockerfiles
 - ✅ Multi-scope rules: instruction-level, stage-level, file-level
-- ✅ Detects: latest tags, root users, missing .dockerignore
+- ✅ Detects: latest tags, root users, missing .dockerignore, hardcoded secrets
 - ✅ Validates: shell form vs exec form, security best practices
+- ✅ Filter by severity level (`--severity high`, `--min-severity medium`)
+- ✅ Selective scanning with `--only` and `--exclude` by rule ID
+- ✅ CI/CD integration with `--fail-on` and `--quiet` modes
+- ✅ Command alias for faster workflow (`docker-file` → `df`)
 
 ### Export & Reporting 📊
 - ✅ Beautiful colored terminal output with tables
@@ -55,7 +59,7 @@
 - ✅ Unified output system (printer + exporters)
 - ✅ Centralized configuration module
 - ✅ Comprehensive error handling with context
-- ✅ 92 passing tests with snapshot testing
+- ✅ 111+ passing tests with snapshot testing
 - ✅ Zero clippy warnings
 
 ---
@@ -133,11 +137,29 @@ valeris docker-file --path ./Dockerfile --rules ./rules/dockerfile
 # Or use the short alias
 valeris df -p ./Dockerfile -r ./rules/dockerfile
 
+# Filter by severity
+valeris df -p ./Dockerfile -r ./rules/dockerfile --severity high
+valeris df -p ./Dockerfile -r ./rules/dockerfile --min-severity medium
+
+# Run only specific rules
+valeris df -p ./Dockerfile -r ./rules/dockerfile --only DF001,DF006
+valeris df -p ./Dockerfile -r ./rules/dockerfile --only DF002,DF004
+
+# Exclude specific rules
+valeris df -p ./Dockerfile -r ./rules/dockerfile --exclude DF008,DF005
+
+# CI/CD integration - fail on critical findings
+valeris df -p ./Dockerfile -r ./rules/dockerfile --fail-on high
+valeris df -p ./Dockerfile -r ./rules/dockerfile --quiet --fail-on medium
+
+# Combine filters for precise targeting
+valeris df -p ./Dockerfile -r ./rules/dockerfile --min-severity high --fail-on high
+
 # Export Dockerfile scan to JSON
-valeris docker-file --path ./Dockerfile --rules ./rules/dockerfile --format json --output scan.json
+valeris df -p ./Dockerfile -r ./rules/dockerfile --format json --output scan.json
 
 # Export to CSV
-valeris docker-file --path ./Dockerfile --rules ./rules/dockerfile --format csv
+valeris df -p ./Dockerfile -r ./rules/dockerfile --format csv --output findings.csv
 ```
 
 ### Advanced Usage
@@ -397,8 +419,21 @@ _Made with ❤️ and structured logging while learning Rust._
 
 ---
 
-## 📚 Learn More
+## 📚 Documentation
 
-- **Blog Series**: [Docker Security with Valeris](https://www.kayssel.com/series/docker-security/)
-- **Documentation**: See [CLAUDE.md](./CLAUDE.md) for architecture details
-- **Rules**: Check [rules/](./rules/) for example YAML detectors
+### 📖 User Guides
+- **[Documentation Index](docs/README.md)** - Complete documentation index
+- **[Quick Start Guide](docs/guides/quick-start.md)** - Get started in 5 minutes
+- **[CLI Reference](docs/CLI.md)** - Complete command-line reference
+- **[Configuration Guide](docs/CONFIGURATION.md)** - Configuration file and environment variables
+- **[CI/CD Integration](docs/CI-CD-INTEGRATION.md)** - Integrate into your pipelines
+
+### 📋 Rules Reference
+- **[Dockerfile Rules](docs/rules/dockerfile-rules.md)** - All 37 Dockerfile security rules
+- **[Runtime Rules](docs/rules/runtime-rules.md)** - All 36 container runtime rules
+
+### 🏗️ Developer Resources
+- **[Architecture Overview](docs/architecture/overview.md)** - System design and components
+- **[Contributing Guide](docs/contributing/CONTRIBUTING.md)** - How to contribute
+- **[CLAUDE.md](./CLAUDE.md)** - Developer guide for AI assistants
+- **[Blog Series](https://www.kayssel.com/series/docker-security/)** - Learning in public

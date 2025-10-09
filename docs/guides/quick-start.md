@@ -80,6 +80,22 @@ valeris docker-file --path ./Dockerfile --rules ./rules/dockerfile
 # Or use the short alias with shortcuts
 valeris df -p ./Dockerfile -r ./rules/dockerfile
 
+# Filter by severity
+valeris df -p ./Dockerfile -r ./rules/dockerfile --severity high
+valeris df -p ./Dockerfile -r ./rules/dockerfile --min-severity medium
+
+# Run only specific rules
+valeris df -p ./Dockerfile -r ./rules/dockerfile --only DF001,DF006,DF002
+
+# Exclude specific rules
+valeris df -p ./Dockerfile -r ./rules/dockerfile --exclude DF008,DF005
+
+# CI/CD integration - fail on high severity
+valeris df -p ./Dockerfile -r ./rules/dockerfile --fail-on high
+
+# Quiet mode for scripts (no output, only exit code)
+valeris df -p ./Dockerfile -r ./rules/dockerfile --quiet --fail-on medium
+
 # Scan example files
 valeris docker-file --path examples/bad-dockerfile --rules ./rules/dockerfile
 ```
@@ -155,7 +171,20 @@ fi
 echo "✅ Security scan passed"
 ```
 
-Alternative with Dockerfile scanning:
+Alternative with Dockerfile scanning using `--fail-on`:
+
+```bash
+#!/bin/bash
+# Fail on high severity findings (recommended approach)
+if ! valeris df -p Dockerfile -r ./rules/dockerfile --quiet --fail-on high; then
+  echo "❌ Critical security issues found in Dockerfile!"
+  exit 1
+fi
+
+echo "✅ Dockerfile security scan passed"
+```
+
+Legacy approach using JSON parsing:
 
 ```bash
 #!/bin/bash
@@ -306,12 +335,24 @@ On first run, Valeris downloads rules from GitHub releases automatically.
 
 ### By Rule ID
 
+**Runtime Scanner:**
 ```bash
 # Only run specific detectors
 valeris scan --only privileged_mode,capabilities
 
 # Exclude specific detectors
 valeris scan --exclude log_driver,image_no_digest
+
+# Note: --only and --exclude cannot be used together
+```
+
+**Dockerfile Scanner:**
+```bash
+# Only run specific rules (by rule ID)
+valeris df -p ./Dockerfile -r ./rules/dockerfile --only DF001,DF002,DF006
+
+# Exclude specific rules
+valeris df -p ./Dockerfile -r ./rules/dockerfile --exclude DF008,DF703
 
 # Note: --only and --exclude cannot be used together
 ```
@@ -346,6 +387,7 @@ valeris scan -c abc123         # Match by container ID prefix
 
 ### By Severity
 
+**Runtime Scanner:**
 ```bash
 # Show only high severity findings
 valeris scan --severity high
@@ -359,6 +401,20 @@ valeris scan --min-severity medium
 # Note: --severity and --min-severity cannot be used together
 ```
 
+**Dockerfile Scanner:**
+```bash
+# Show only high severity findings
+valeris df -p ./Dockerfile -r ./rules/dockerfile --severity high
+
+# Show only medium and high
+valeris df -p ./Dockerfile -r ./rules/dockerfile --severity medium,high
+
+# Show findings at or above medium
+valeris df -p ./Dockerfile -r ./rules/dockerfile --min-severity medium
+
+# Note: --severity and --min-severity cannot be used together
+```
+
 **Severity levels (in order):**
 - `informative` - Informational findings
 - `low` - Low risk issues
@@ -367,6 +423,7 @@ valeris scan --min-severity medium
 
 ### Combining Filters
 
+**Runtime Scanner:**
 ```bash
 # Running containers, only security checks
 valeris scan \
@@ -381,6 +438,25 @@ valeris scan \
 
 # Filter by state and container name with severity
 valeris scan --state running --container web- --min-severity high
+```
+
+**Dockerfile Scanner:**
+```bash
+# Check only critical security rules
+valeris df -p ./Dockerfile -r ./rules/dockerfile \
+  --only DF002,DF003,DF006 \
+  --min-severity high
+
+# Scan with severity threshold and rule exclusions
+valeris df -p ./Dockerfile -r ./rules/dockerfile \
+  --exclude DF703,DF702 \
+  --min-severity medium
+
+# CI/CD with combined filters
+valeris df -p ./Dockerfile -r ./rules/dockerfile \
+  --only DF001,DF002,DF006,DF202 \
+  --fail-on high \
+  --quiet
 ```
 
 ## Troubleshooting

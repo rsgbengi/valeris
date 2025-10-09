@@ -82,14 +82,28 @@ This directory contains YAML rules for static analysis of Dockerfiles.
 ## 📊 Usage
 
 ```bash
-# Scan a Dockerfile
-cargo run -- docker-file --path ./Dockerfile --rules ./rules/dockerfile
+# Basic scan
+valeris docker-file --path ./Dockerfile --rules ./rules/dockerfile
+valeris df -p ./Dockerfile -r ./rules/dockerfile  # Short alias
 
-# JSON format
-cargo run -- docker-file --path ./Dockerfile --rules ./rules/dockerfile --format json
+# Filter by severity
+valeris df -p ./Dockerfile -r ./rules/dockerfile --severity high
+valeris df -p ./Dockerfile -r ./rules/dockerfile --min-severity medium
 
-# Save results
-cargo run -- docker-file --path ./Dockerfile --rules ./rules/dockerfile --format json --output results.json
+# Run only specific rules
+valeris df -p ./Dockerfile -r ./rules/dockerfile --only DF001,DF006
+valeris df -p ./Dockerfile -r ./rules/dockerfile --only DF002,DF004
+
+# Exclude specific rules
+valeris df -p ./Dockerfile -r ./rules/dockerfile --exclude DF008,DF005
+
+# CI/CD integration
+valeris df -p ./Dockerfile -r ./rules/dockerfile --fail-on high
+valeris df -p ./Dockerfile -r ./rules/dockerfile --quiet --fail-on medium
+
+# Export formats
+valeris df -p ./Dockerfile -r ./rules/dockerfile --format json --output results.json
+valeris df -p ./Dockerfile -r ./rules/dockerfile --format csv --output report.csv
 ```
 
 ## 🔧 Secure Dockerfile Example

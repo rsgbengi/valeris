@@ -184,7 +184,7 @@ valeris scan --format csv --output report.csv
 
 ### docker-file
 
-Scan Dockerfiles for build-time security issues (experimental).
+Scan Dockerfiles for build-time security issues.
 
 ```bash
 valeris docker-file [OPTIONS] --path <PATH> --rules <PATH>
@@ -192,12 +192,46 @@ valeris docker-file [OPTIONS] --path <PATH> --rules <PATH>
 
 #### Options
 
-| Option | Short | Required | Description |
-|--------|-------|----------|-------------|
-| `--path <PATH>` | `-p` | Yes | Path to Dockerfile to scan |
-| `--rules <PATH>` | `-r` | Yes | Path to rules directory |
-| `--format <FORMAT>` | `-f` | No | Output format (default: table) |
-| `--output <FILE>` | `-o` | No | Write results to file |
+**Required:**
+
+| Option | Short | Description |
+|--------|-------|-------------|
+| `--path <PATH>` | `-p` | Path to Dockerfile to scan |
+| `--rules <PATH>` | `-r` | Path to rules directory |
+
+**Rule Filtering:**
+
+| Option | Short | Description |
+|--------|-------|-------------|
+| `--only <RULE_IDS>` | | Run only specified rules (comma-separated) |
+| `--exclude <RULE_IDS>` | | Exclude specified rules (comma-separated) |
+
+**Note:** `--only` and `--exclude` are mutually exclusive.
+
+**Severity Filtering:**
+
+| Option | Short | Description |
+|--------|-------|-------------|
+| `--severity <SEVERITIES>` | | Filter by exact severity levels (comma-separated) |
+| `--min-severity <LEVEL>` | | Show only findings at or above this level |
+
+**Note:** `--severity` and `--min-severity` are mutually exclusive.
+
+Available severity levels (in order): `informative`, `low`, `medium`, `high`
+
+**CI/CD Integration:**
+
+| Option | Short | Description |
+|--------|-------|-------------|
+| `--fail-on <LEVEL>` | | Exit with code 1 if findings meet or exceed this severity |
+| `--quiet` | | Suppress all output, only set exit code (requires --fail-on) |
+
+**Output Options:**
+
+| Option | Short | Default | Description |
+|--------|-------|---------|-------------|
+| `--format <FORMAT>` | `-f` | `table` | Output format (table, json, csv) |
+| `--output <FILE>` | `-o` | | Write results to file |
 
 #### Examples
 
@@ -206,11 +240,32 @@ valeris docker-file [OPTIONS] --path <PATH> --rules <PATH>
 valeris docker-file --path ./Dockerfile --rules ./rules/dockerfile
 valeris df -p ./Dockerfile -r ./rules/dockerfile  # Using alias
 
+# Filter by severity
+valeris df -p ./Dockerfile -r ./rules/dockerfile --severity high
+valeris df -p ./Dockerfile -r ./rules/dockerfile --min-severity medium
+
+# Run only specific rules
+valeris df -p ./Dockerfile -r ./rules/dockerfile --only DF001,DF006
+valeris df -p ./Dockerfile -r ./rules/dockerfile --only DF002,DF004
+
+# Exclude noisy rules
+valeris df -p ./Dockerfile -r ./rules/dockerfile --exclude DF008,DF005
+
+# CI/CD integration
+valeris df -p ./Dockerfile -r ./rules/dockerfile --fail-on high
+valeris df -p ./Dockerfile -r ./rules/dockerfile --quiet --fail-on medium
+
+# Combine filters
+valeris df -p ./Dockerfile -r ./rules/dockerfile --min-severity high --fail-on high
+
 # Export to JSON
-valeris docker-file -p ./Dockerfile -r ./rules/dockerfile -f json -o scan.json
+valeris df -p ./Dockerfile -r ./rules/dockerfile -f json -o scan.json
+
+# Export to CSV
+valeris df -p ./Dockerfile -r ./rules/dockerfile --format csv --output findings.csv
 
 # Table output (default)
-valeris docker-file --path ./Dockerfile --rules ./rules/dockerfile --format table
+valeris df -p ./Dockerfile -r ./rules/dockerfile --format table
 ```
 
 ---
@@ -531,15 +586,22 @@ valeris scan --container api --state running
 Automated scanning in pipelines:
 
 ```bash
-# Export to JSON for processing
+# Export runtime scan to JSON for processing
 valeris scan --state running --format json --output scan-results.json
 
-# Dockerfile validation
+# Dockerfile validation with fail-on
 valeris docker-file --path Dockerfile --rules ./rules/dockerfile \
-  --format json --output dockerfile-scan.json
+  --fail-on high --format json --output dockerfile-scan.json
 
-# Check for critical issues
+# Quiet mode for build scripts
+valeris df -p Dockerfile -r ./rules/dockerfile --quiet --fail-on medium
+
+# Check for critical issues with jq
 jq -e '.findings[] | select(.severity == "CRITICAL")' scan-results.json
+
+# Combined pipeline: scan Dockerfile AND containers
+valeris df -p Dockerfile -r ./rules/dockerfile --fail-on high && \
+valeris scan --fail-on high
 ```
 
 ### Compliance Reporting

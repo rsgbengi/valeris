@@ -9,6 +9,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+#### Dockerfile Scanner - Feature Complete
+- **Complete Dockerfile scanning** with full feature parity to runtime scanner:
+  - Three-level scanning: instruction-level, stage-level, file-level
+  - 30+ rules across 10 YAML files detecting security issues
+  - **Rule filtering** with `--only` and `--exclude` flags (by rule ID)
+  - **Severity filtering** with `--severity` and `--min-severity` flags
+  - **CI/CD integration** with `--fail-on` and `--quiet` modes
+  - **Multiple output formats**: table (default), JSON, CSV
+  - Command alias `df` for faster workflow
+- **Dockerfile-specific detections**:
+  - Mutable image tags (`:latest`)
+  - Running as root user
+  - Hardcoded secrets in ENV variables
+  - Missing .dockerignore files
+  - Sensitive ports exposure (SSH, databases)
+  - Shell form vs exec form validation
+  - Package manager best practices
+  - Multi-stage build optimizations
+- **New scanner functions** in `src/detectors/dockerfile/scanner.rs`:
+  - `filter_rules()` - Apply only/exclude filters by rule ID
+  - `filter_findings_by_severity()` - Filter by severity levels
+  - `should_fail_scan()` - Determine exit code based on findings
+  - `severity_level_to_risk()` - Convert CLI severity to RiskLevel
+  - `get_rule_id()` - Extract rule ID from Rule enum
+- Removed "WIP" status - Dockerfile scanner is now production-ready
+
 #### Persistent Configuration
 - **TOML-based configuration files** for persistent settings:
   - Supports XDG config directory (`~/.config/valeris/config.toml`)
@@ -64,7 +90,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Created comprehensive CLI reference guide (`docs/CLI.md`)
 - Updated `README.md` with new filtering capabilities and command aliases
 - Updated `CLAUDE.md` with detailed CLI usage examples
-- Updated `docs/guides/quick-start.md` with new features
+- Updated `docs/guides/quick-start.md` with Dockerfile scanner features (severity filtering, fail-on, only/exclude)
+- Updated `docs/CI-CD-INTEGRATION.md` with Dockerfile scanning examples
+- Updated `docs/rules/dockerfile-rules.md` with complete usage examples
 - Updated `docs/contributing/CONTRIBUTING.md` with current function signatures
 
 ### Changed
@@ -104,8 +132,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - 3 integration tests (CLI behavior)
   - 3 parser tests (argument parsing)
   - 2 unit tests (pattern normalization)
-- Updated existing tests to work with new `Vec<String>` types
-- All 120+ tests passing successfully
+- Updated 9 Dockerfile integration tests for new scanner signature
+- Updated all existing tests to work with new `Vec<String>` types
+- **All 111+ tests passing successfully** (56 unit + 55 integration)
 
 ### Dependencies
 

@@ -14,7 +14,7 @@ Complete guide for integrating Valeris into your CI/CD pipelines.
 
 ## Quick Start
 
-### Basic CI/CD Scan
+### Runtime Container Scanning
 
 ```bash
 # Fail pipeline if high severity findings exist
@@ -22,16 +22,31 @@ valeris scan --fail-on high
 
 # Quiet mode - no output, only exit code
 valeris scan --quiet --fail-on high
+
+# With container filtering
+valeris scan --state running --fail-on medium
+valeris scan --container production-* --fail-on high
 ```
 
-### With Filtering
+### Dockerfile Scanning
 
 ```bash
-# Only scan running containers, fail on medium+
-valeris scan --state running --fail-on medium
+# Fail pipeline if critical Dockerfile issues exist
+valeris docker-file -p Dockerfile -r ./rules/dockerfile --fail-on high
 
-# Specific containers with severity threshold
-valeris scan --container production-* --fail-on high
+# Quiet mode for build scripts
+valeris df -p Dockerfile -r ./rules/dockerfile --quiet --fail-on medium
+
+# Only check specific rules
+valeris df -p Dockerfile -r ./rules/dockerfile --only DF001,DF002,DF006 --fail-on high
+```
+
+### Combined Pipeline
+
+```bash
+# Scan both Dockerfile AND running containers
+valeris df -p Dockerfile -r ./rules/dockerfile --fail-on high && \
+valeris scan --fail-on high
 ```
 
 ---
@@ -137,21 +152,28 @@ jobs:
         run: |
           cargo install --git https://github.com/rsgbengi/valeris.git --locked
 
+      - name: Scan Dockerfile
+        run: |
+          valeris docker-file -p Dockerfile -r ./rules/dockerfile --fail-on high
+
       - name: Scan containers
         run: |
           valeris scan --state running --fail-on high
 
-      - name: Export findings
+      - name: Export findings on failure
         if: failure()
         run: |
-          valeris scan --format json --output findings.json
+          valeris scan --format json --output container-findings.json
+          valeris df -p Dockerfile -r ./rules/dockerfile -f json -o dockerfile-findings.json
 
       - name: Upload findings
         if: failure()
         uses: actions/upload-artifact@v3
         with:
           name: security-findings
-          path: findings.json
+          path: |
+            container-findings.json
+            dockerfile-findings.json
 ```
 
 ### GitLab CI

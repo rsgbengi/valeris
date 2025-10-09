@@ -263,17 +263,24 @@ pub enum Commands {
         output: Option<String>,
     },
 
-    /// Scan Dockerfiles for build-time security issues (experimental)
+    /// Scan Dockerfiles for build-time security issues
     ///
     /// Analyzes Dockerfile instructions for security misconfigurations during
     /// the build process. Detects issues like running as root, using latest tags,
     /// hardcoded secrets, insecure base images, and more.
     ///
-    /// Note: This feature is currently in development (WIP).
-    ///
     /// Examples:
     ///   # Scan a Dockerfile with default rules
     ///   valeris docker-file --path ./Dockerfile --rules ./rules/dockerfile
+    ///
+    ///   # Filter by severity
+    ///   valeris docker-file -p ./Dockerfile -r ./rules/dockerfile --min-severity high
+    ///
+    ///   # CI/CD integration - fail on critical findings
+    ///   valeris docker-file -p ./Dockerfile -r ./rules/dockerfile --fail-on high
+    ///
+    ///   # Run only specific detectors
+    ///   valeris docker-file -p ./Dockerfile -r ./rules/dockerfile --only DF001,DF006
     ///
     ///   # Export findings as JSON
     ///   valeris docker-file --path ./Dockerfile --rules ./rules/dockerfile \
@@ -304,6 +311,86 @@ pub enum Commands {
         )]
         rules: PathBuf,
 
+        // Detector Filtering
+        #[arg(
+            long,
+            value_name = "RULE_IDS",
+            value_delimiter = ',',
+            help = "Run only specified rules (comma-separated rule IDs)",
+            long_help = "Run only the specified rule(s). Multiple rules can be specified \
+                        as a comma-separated list.\n\n\
+                        Example: --only DF001,DF006,DF002\n\n\
+                        Rule IDs are defined in the YAML rule files."
+        )]
+        only: Option<Vec<String>>,
+
+        #[arg(
+            long,
+            value_name = "RULE_IDS",
+            value_delimiter = ',',
+            help = "Exclude specified rules (comma-separated rule IDs)",
+            long_help = "Exclude the specified rule(s) from the scan. Multiple rules \
+                        can be specified as a comma-separated list.\n\n\
+                        Example: --exclude DF005,DF008\n\n\
+                        Rule IDs are defined in the YAML rule files.",
+            conflicts_with = "only"
+        )]
+        exclude: Option<Vec<String>>,
+
+        // Severity Filtering
+        #[arg(
+            long,
+            value_name = "SEVERITIES",
+            value_delimiter = ',',
+            help = "Filter findings by severity (comma-separated)",
+            long_help = "Show only findings with specified severity levels. Multiple levels \
+                        can be specified as a comma-separated list.\n\n\
+                        Available levels (in order): informative, low, medium, high\n\n\
+                        Examples:\n  \
+                        --severity high                    # Only high severity\n  \
+                        --severity medium,high             # Medium and high",
+            conflicts_with = "min_severity"
+        )]
+        severity: Option<Vec<SeverityLevel>>,
+
+        #[arg(
+            long,
+            value_name = "LEVEL",
+            help = "Show only findings at or above this severity",
+            long_help = "Filter findings to show only those at or above the specified minimum \
+                        severity level.\n\n\
+                        Available levels: informative, low, medium, high\n\n\
+                        Examples:\n  \
+                        --min-severity medium    # Show medium and high\n  \
+                        --min-severity high      # Show only high"
+        )]
+        min_severity: Option<SeverityLevel>,
+
+        // CI/CD Integration
+        #[arg(
+            long,
+            value_name = "LEVEL",
+            help = "Exit with error code 1 if findings at or above this level exist",
+            long_help = "Causes valeris to exit with code 1 if any findings at or above the \
+                        specified severity level are found. Useful for CI/CD pipelines.\n\n\
+                        Available levels: informative, low, medium, high\n\n\
+                        Examples:\n  \
+                        --fail-on high       # Fail on high severity findings\n  \
+                        --fail-on medium     # Fail on medium or high findings"
+        )]
+        fail_on: Option<SeverityLevel>,
+
+        #[arg(
+            long,
+            help = "Suppress all output, only set exit code (implies --fail-on)",
+            long_help = "Run in quiet mode with no output. Useful for CI/CD where you only \
+                        care about the exit code. This flag requires --fail-on to be set.\n\n\
+                        Example: valeris docker-file -p ./Dockerfile -r ./rules/dockerfile --quiet --fail-on high",
+            requires = "fail_on"
+        )]
+        quiet: bool,
+
+        // Output Options
         #[arg(
             long,
             short = 'f',

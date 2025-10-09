@@ -27,6 +27,12 @@
 //! scan_dockerfile(
 //!     PathBuf::from("./Dockerfile"),
 //!     PathBuf::from("./rules/dockerfile"),
+//!     None, // only
+//!     None, // exclude
+//!     None, // severity
+//!     None, // min_severity
+//!     None, // fail_on
+//!     false, // quiet
 //!     OutputFormat::Table,
 //!     None
 //! ).expect("Scan failed");
