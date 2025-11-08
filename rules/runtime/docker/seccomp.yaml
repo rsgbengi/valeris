@@ -1,0 +1,12 @@
+id: seccomp_unconfined
+name: "Seccomp Disabled"
+target: docker_runtime
+severity: HIGH
+description: Detects containers running with seccomp disabled (unconfined).
+match:
+  jsonpath: "$.HostConfig.SecurityOpt[*]"
+  regex: "seccomp[=:]unconfined"
+include_match_in_description: true
+message: "Container running without seccomp syscall filtering"
+fix: |
+  Remove --security-opt seccomp=unconfined to enable default seccomp profile.

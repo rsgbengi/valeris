@@ -1,0 +1,58 @@
+# Valeris Configuration File
+# Place this file at: ~/.config/valeris/config.toml
+# Or specify with: VALERIS_CONFIG_FILE=/path/to/config.toml
+
+# Scan defaults
+[scan]
+# Default container states to scan (comma-separated or array)
+# default_state = ["running"]
+# default_state = "running,paused"
+
+# Default detectors to run (use --only flag equivalent)
+# only = ["exposed_ports", "capabilities", "secrets_in_env"]
+
+# Detectors to always exclude
+# exclude = ["readonly_rootfs", "log_driver"]
+
+# Default minimum severity to show
+# min_severity = "medium"  # informative, low, medium, high
+
+# Default fail-on threshold for CI/CD
+# fail_on = "high"
+
+# Always run in quiet mode
+# quiet = false
+
+# Container name patterns to ignore
+# ignore_containers = ["*-test", "*-temp"]
+
+# Output preferences
+[output]
+# Default output format (table, json, csv)
+# format = "table"
+
+# Enable colored output (auto-detected if not set)
+# colors = true
+
+# Table width for formatted output
+# table_width = 100
+
+# Rules management
+[rules]
+# Custom rules directory (overrides VALERIS_RULES_DIR)
+# directory = "/opt/valeris/custom-rules"
+
+# Automatically download rules if missing
+# auto_download = true
+
+# Docker connection
+[docker]
+# Connection timeout in seconds
+# timeout = 30
+
+# Maximum parallel scans
+# max_parallel = 10
+
+# Docker host (if using remote Docker)
+# host = "unix:///var/run/docker.sock"
+# host = "tcp://remote-docker:2376"

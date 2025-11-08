@@ -1,0 +1,50 @@
+# ❌ EJEMPLO DE DOCKERFILE INSEGURO
+# Este Dockerfile contiene múltiples problemas de seguridad y best practices
+# para demostrar las capacidades de detección de Valeris
+
+# Problema: Usa tag mutable 'latest'
+FROM ubuntu:latest
+
+# Problema: apt-get install sin update ni limpieza de cache
+RUN apt-get install -y curl wget vim nano git
+
+# Problema: Descarga insegura (HTTP y sin checksum)
+RUN curl http://example.com/binary > /tmp/app
+RUN wget --no-check-certificate https://unsafe.com/file.tar.gz
+
+# Problema: curl con flag inseguro
+RUN curl -k https://api.example.com/data > /data.json
+
+# Problema: pip install sin pinning ni cache cleanup
+RUN pip install flask requests sqlalchemy
+
+# Problema: npm install en lugar de npm ci
+RUN npm install express
+
+# Problema: Secreto hardcoded en ENV
+ENV DATABASE_PASSWORD=my_super_secret_123
+ENV API_KEY=sk_live_abcdef1234567890
+
+# Problema: Usuario root
+USER root
+
+# Problema: chmod 777 (world-writable)
+RUN chmod 777 /app /tmp
+
+# Problema: Uso innecesario de sudo
+RUN sudo apt-get update
+
+# Problema: COPY . sin .dockerignore
+COPY . /app
+
+# Problema: cd en lugar de WORKDIR
+RUN cd /app && npm start
+
+# Problema: Puerto sensible expuesto
+EXPOSE 22 3306
+
+# Problema: Shell form en CMD
+CMD npm run start
+
+# Problema: No termina con USER no-root
+# Problema: Sin HEALTHCHECK

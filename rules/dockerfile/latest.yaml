@@ -1,0 +1,16 @@
+version: 1
+rules:
+  - id: DF001
+    name: Disallow latest tag
+    scope: instruction
+    kind: FROM
+    match:
+      any:
+        - field: from.tag
+          equals: latest
+        - field: from.tag
+          missing: true
+    severity: medium
+    message: "Base image uses a mutable tag (latest or no tag)."
+    remediation: "Pin to a fixed version or digest (e.g., :1.20.3 or @sha256:...)."
+    tags: [reproducibility]

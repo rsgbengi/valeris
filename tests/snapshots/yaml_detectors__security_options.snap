@@ -7,5 +7,10 @@ expression: findings
     "kind": "security_options",
     "description": "Security option is set to an unconfined profile",
     "risk": "High"
+  },
+  {
+    "kind": "seccomp_unconfined",
+    "description": "Container running without seccomp syscall filtering: seccomp=unconfined",
+    "risk": "High"
   }
 ]

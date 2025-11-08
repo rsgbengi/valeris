@@ -1,0 +1,77 @@
+version: 1
+rules:
+  - id: DF301
+    name: pip install without pinned versions
+    scope: instruction
+    kind: RUN
+    match:
+      all:
+        - field: command
+          regex: "pip\\s+install"
+        - field: command
+          regex: "(requirements\\.txt|-r\\s+)"
+          missing: true
+    severity: medium
+    message: "pip install without requirements.txt (unpinned dependencies)"
+    remediation: "Use 'pip install -r requirements.txt' with pinned versions"
+    tags: [reproducibility, supply-chain]
+
+  - id: DF302
+    name: npm install without package-lock
+    scope: instruction
+    kind: RUN
+    match:
+      all:
+        - field: command
+          regex: "npm\\s+install"
+        - field: command
+          regex: "npm\\s+ci"
+          missing: true
+    severity: medium
+    message: "Using 'npm install' instead of 'npm ci' (non-deterministic)"
+    remediation: "Use 'npm ci' to install from package-lock.json for reproducible builds"
+    tags: [reproducibility, supply-chain]
+
+  - id: DF303
+    name: pip cache not cleaned
+    scope: instruction
+    kind: RUN
+    match:
+      all:
+        - field: command
+          regex: "pip\\s+install"
+        - field: command
+          regex: "--no-cache-dir"
+          missing: true
+    severity: low
+    message: "pip install without --no-cache-dir (increases image size)"
+    remediation: "Add --no-cache-dir flag: pip install --no-cache-dir -r requirements.txt"
+    tags: [optimization]
+
+  - id: DF304
+    name: Global npm install in Dockerfile
+    scope: instruction
+    kind: RUN
+    match:
+      field: command
+      regex: "npm\\s+install\\s+-g"
+    severity: medium
+    message: "Installing npm packages globally (can cause permission issues)"
+    remediation: "Use local npm install or npx for executables"
+    tags: [best-practices]
+
+  - id: DF305
+    name: Running pip as root
+    scope: instruction
+    kind: RUN
+    match:
+      all:
+        - field: command
+          regex: "pip\\s+install"
+        - field: command
+          regex: "--user"
+          missing: true
+    severity: low
+    message: "pip install running as root without --user flag"
+    remediation: "Consider using --user flag or switch to non-root user first"
+    tags: [security, best-practices]

@@ -1,0 +1,12 @@
+id: custom_dns
+name: "Custom DNS Servers"
+target: docker_runtime
+severity: LOW
+description: Detects containers using custom DNS servers which could be used for data exfiltration.
+match:
+  jsonpath: "$.HostConfig.Dns[*]"
+  regex: "^(?!127\\.0\\.0\\.1).*$"
+include_match_in_description: true
+message: "Container uses custom DNS servers"
+fix: |
+  Review DNS servers. Use trusted DNS or Docker's default DNS configuration.

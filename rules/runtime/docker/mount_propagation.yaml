@@ -1,0 +1,12 @@
+id: mount_propagation
+name: "Dangerous Mount Propagation"
+target: docker_runtime
+severity: HIGH
+description: Detects containers with shared or slave mount propagation that can affect host mounts.
+match:
+  jsonpath: "$.Mounts[*].Propagation"
+  regex: "^(shared|rshared|slave|rslave)$"
+include_match_in_description: true
+message: "Container has dangerous mount propagation mode"
+fix: |
+  Use private mount propagation (default) or rprivate to isolate container mounts from the host.

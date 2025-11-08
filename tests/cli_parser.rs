@@ -46,7 +46,10 @@ mod tests {
                 ..
             } => {
                 assert_eq!(target, ScanTarget::Docker);
-                assert_eq!(only.unwrap(), "ports,secrets");
+                let only_vec = only.unwrap();
+                assert_eq!(only_vec.len(), 2);
+                assert!(only_vec.contains(&"ports".to_string()));
+                assert!(only_vec.contains(&"secrets".to_string()));
                 assert!(exclude.is_none());
                 assert_eq!(format, OutputFormat::Json);
                 assert_eq!(output.unwrap(), "report.json");
@@ -110,7 +113,10 @@ mod tests {
         for &name in VALID_PLUGINS {
             let cli = Cli::parse_from(["valeris", "scan", "--only", name]);
             match cli.command {
-                Commands::Scan { only: Some(s), .. } => assert_eq!(s, name),
+                Commands::Scan { only: Some(s), .. } => {
+                    assert_eq!(s.len(), 1);
+                    assert_eq!(s[0], name);
+                }
                 _ => panic!("Should parse plugin name"),
             }
         }
@@ -123,7 +129,10 @@ mod tests {
             match cli.command {
                 Commands::Scan {
                     exclude: Some(s), ..
-                } => assert_eq!(s, name),
+                } => {
+                    assert_eq!(s.len(), 1);
+                    assert_eq!(s[0], name);
+                }
                 _ => panic!("Should parse plugin name in exclude"),
             }
         }
@@ -173,7 +182,9 @@ mod tests {
         let cli = Cli::parse_from(["valeris", "scan", "--state", "running,exited"]);
         match cli.command {
             Commands::Scan { state: Some(s), .. } => {
-                assert_eq!(s, "running,exited");
+                assert_eq!(s.len(), 2);
+                assert!(s.contains(&"running".to_string()));
+                assert!(s.contains(&"exited".to_string()));
             }
             _ => panic!("Expected Scan command"),
         }
@@ -188,8 +199,6 @@ mod tests {
             "docker",
             "--only",
             "capabilities,network",
-            "--exclude",
-            "root_user",
             "--output",
             "output.csv",
             "--format",
@@ -205,8 +214,11 @@ mod tests {
                 ..
             } => {
                 assert_eq!(target, ScanTarget::Docker);
-                assert_eq!(only.unwrap(), "capabilities,network");
-                assert_eq!(exclude.unwrap(), "root_user");
+                let only_vec = only.unwrap();
+                assert_eq!(only_vec.len(), 2);
+                assert!(only_vec.contains(&"capabilities".to_string()));
+                assert!(only_vec.contains(&"network".to_string()));
+                assert!(exclude.is_none());
                 assert_eq!(output.unwrap(), "output.csv");
                 assert_eq!(format, OutputFormat::Csv);
             }
@@ -218,5 +230,136 @@ mod tests {
     fn shows_help_flag_does_not_panic() {
         let result = Cli::try_parse_from(["valeris", "--help"]);
         assert!(result.is_err()); // clap returns an error that triggers help display
+    }
+
+    #[test]
+    fn parses_container_filter() {
+        let cli = Cli::parse_from(["valeris", "scan", "--container", "nginx,redis"]);
+        match cli.command {
+            Commands::Scan { container, .. } => {
+                let containers = container.unwrap();
+                assert_eq!(containers.len(), 2);
+                assert!(containers.contains(&"nginx".to_string()));
+                assert!(containers.contains(&"redis".to_string()));
+            }
+            _ => panic!("Expected Scan command"),
+        }
+    }
+
+    #[test]
+    fn parses_container_filter_short_flag() {
+        let cli = Cli::parse_from(["valeris", "scan", "-c", "web-app"]);
+        match cli.command {
+            Commands::Scan { container, .. } => {
+                let containers = container.unwrap();
+                assert_eq!(containers.len(), 1);
+                assert_eq!(containers[0], "web-app");
+            }
+            _ => panic!("Expected Scan command"),
+        }
+    }
+
+    #[test]
+    fn parses_combined_filters() {
+        let cli = Cli::parse_from([
+            "valeris",
+            "scan",
+            "--state",
+            "running",
+            "--container",
+            "nginx",
+            "--only",
+            "exposed_ports",
+        ]);
+        match cli.command {
+            Commands::Scan {
+                state,
+                container,
+                only,
+                ..
+            } => {
+                assert!(state.is_some());
+                assert!(container.is_some());
+                assert!(only.is_some());
+
+                let states = state.unwrap();
+                assert_eq!(states.len(), 1);
+                assert_eq!(states[0], "running");
+
+                let containers = container.unwrap();
+                assert_eq!(containers.len(), 1);
+                assert_eq!(containers[0], "nginx");
+
+                let only_detectors = only.unwrap();
+                assert_eq!(only_detectors.len(), 1);
+                assert_eq!(only_detectors[0], "exposed_ports");
+            }
+            _ => panic!("Expected Scan command"),
+        }
+    }
+
+    #[test]
+    fn parses_severity_filter() {
+        let cli = Cli::parse_from(["valeris", "scan", "--severity", "high,medium"]);
+        match cli.command {
+            Commands::Scan { severity, .. } => {
+                let severities = severity.unwrap();
+                assert_eq!(severities.len(), 2);
+            }
+            _ => panic!("Expected Scan command"),
+        }
+    }
+
+    #[test]
+    fn parses_min_severity() {
+        let cli = Cli::parse_from(["valeris", "scan", "--min-severity", "medium"]);
+        match cli.command {
+            Commands::Scan { min_severity, .. } => {
+                assert!(min_severity.is_some());
+            }
+            _ => panic!("Expected Scan command"),
+        }
+    }
+
+    #[test]
+    fn parses_fail_on() {
+        let cli = Cli::parse_from(["valeris", "scan", "--fail-on", "high"]);
+        match cli.command {
+            Commands::Scan { fail_on, .. } => {
+                assert!(fail_on.is_some());
+            }
+            _ => panic!("Expected Scan command"),
+        }
+    }
+
+    #[test]
+    fn parses_quiet_with_fail_on() {
+        let cli = Cli::parse_from(["valeris", "scan", "--quiet", "--fail-on", "medium"]);
+        match cli.command {
+            Commands::Scan { quiet, fail_on, .. } => {
+                assert!(quiet);
+                assert!(fail_on.is_some());
+            }
+            _ => panic!("Expected Scan command"),
+        }
+    }
+
+    #[test]
+    fn fails_quiet_without_fail_on() {
+        let result = Cli::try_parse_from(["valeris", "scan", "--quiet"]);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn fails_severity_and_min_severity_together() {
+        let result = Cli::try_parse_from([
+            "valeris",
+            "scan",
+            "--severity",
+            "high",
+            "--min-severity",
+            "medium",
+        ]);
+        assert!(result.is_err());
     }
 }

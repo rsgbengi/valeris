@@ -1,0 +1,14 @@
+id: tmpfs_exec
+name: "Tmpfs Mount Without noexec"
+target: docker_runtime
+severity: MEDIUM
+description: Detects tmpfs mounts without noexec flag that could allow execution from memory.
+match:
+  parts:
+    - jsonpath: "$.HostConfig.Tmpfs.*"
+    - jsonpath: "$.HostConfig.Tmpfs.*"
+  separator: ":"
+  regex: "^(?!.*noexec).*$"
+message: "Container has tmpfs mount without noexec flag"
+fix: |
+  Add noexec to tmpfs options: --tmpfs /tmp:rw,noexec,nosuid,size=64m

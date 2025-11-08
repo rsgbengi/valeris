@@ -1,0 +1,12 @@
+id: image_no_digest
+name: "Image Without Digest"
+target: docker_runtime
+severity: INFO
+description: Detects containers not using content-addressable image digests.
+match:
+  jsonpath: "$.Image"
+  regex: "^sha256:"
+  missing: true
+message: "Container image not pinned to digest (consider using @sha256:...)"
+fix: |
+  Use image digest for immutability: docker run nginx@sha256:abcd1234...

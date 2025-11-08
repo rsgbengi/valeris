@@ -1,0 +1,47 @@
+version: 1
+rules:
+  - id: DF401
+    name: Using cd instead of WORKDIR
+    scope: instruction
+    kind: RUN
+    match:
+      field: command
+      regex: "\\bcd\\s+"
+    severity: low
+    message: "Using 'cd' in RUN instead of WORKDIR instruction"
+    remediation: "Use WORKDIR instruction to change directory persistently"
+    tags: [best-practices]
+
+  - id: DF402
+    name: Missing HEALTHCHECK instruction
+    scope: stage
+    when:
+      must_end_non_root: false
+    severity: info
+    message: "No HEALTHCHECK instruction defined"
+    remediation: "Add HEALTHCHECK instruction for container health monitoring"
+    tags: [observability, best-practices]
+
+  - id: DF403
+    name: Absolute paths not used
+    scope: instruction
+    kind: COPY
+    match:
+      field: dest
+      regex: "^[^/]"
+    severity: low
+    message: "COPY destination uses relative path"
+    remediation: "Use absolute paths or set WORKDIR first"
+    tags: [best-practices]
+
+  - id: DF404
+    name: WORKDIR not absolute
+    scope: instruction
+    kind: WORKDIR
+    match:
+      field: path
+      regex: "^[^/]"
+    severity: medium
+    message: "WORKDIR uses relative path (can be confusing)"
+    remediation: "Use absolute paths for WORKDIR: WORKDIR /app"
+    tags: [best-practices]

@@ -1,0 +1,60 @@
+version: 1
+rules:
+  - id: DF201
+    name: curl/wget without checksum verification
+    scope: instruction
+    kind: RUN
+    match:
+      all:
+        - field: command
+          regex: "(curl|wget)\\s+.*http"
+        - field: command
+          regex: "(sha256sum|md5sum|gpg|--verify)"
+          missing: true
+    severity: high
+    message: "Downloading files without integrity verification"
+    remediation: "Add checksum verification: curl -fsSL <url> | sha256sum -c <expected-hash>"
+    tags: [security, supply-chain]
+
+  - id: DF202
+    name: Insecure curl flags
+    scope: instruction
+    kind: RUN
+    match:
+      field: command
+      regex: "curl\\s+.*(-k|--insecure)"
+    severity: critical
+    message: "curl using insecure flag (-k/--insecure) disables SSL verification"
+    remediation: "Remove -k/--insecure flag and fix SSL certificate issues properly"
+    tags: [security]
+
+  - id: DF203
+    name: wget without secure options
+    scope: instruction
+    kind: RUN
+    match:
+      all:
+        - field: command
+          regex: "wget\\s+"
+        - field: command
+          regex: "--no-check-certificate"
+    severity: critical
+    message: "wget using --no-check-certificate (disables SSL verification)"
+    remediation: "Remove --no-check-certificate and fix certificate issues"
+    tags: [security]
+
+  - id: DF204
+    name: Downloading from HTTP instead of HTTPS
+    scope: instruction
+    kind: RUN
+    match:
+      all:
+        - field: command
+          regex: "(curl|wget)\\s+.*http://"
+        - field: command
+          regex: "https://"
+          missing: true
+    severity: medium
+    message: "Downloading over HTTP instead of HTTPS"
+    remediation: "Use HTTPS URLs to ensure secure downloads"
+    tags: [security]

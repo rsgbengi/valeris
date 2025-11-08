@@ -1,0 +1,45 @@
+# Team-Wide Standards Configuration
+#
+# Standardized settings for team adoption and consistent behavior.
+#
+# Usage:
+#   # Individual developers
+#   cp examples/configs/team-standards.toml ~/.config/valeris/config.toml
+#
+#   # CI/CD
+#   export VALERIS_CONFIG_FILE=/etc/valeris/team-standards.toml
+#   valeris scan
+
+[scan]
+# Only scan running containers by default
+default_state = ["running"]
+
+# Exclude rules agreed upon by team
+# (These are typically false-positive prone or environment-specific)
+exclude = [
+    "readonly_rootfs",
+    "log_driver"
+]
+
+# Show medium severity and above
+min_severity = "medium"
+
+# Fail builds on high severity findings
+fail_on = "high"
+
+[output]
+# Colored table output for developers
+format = "table"
+colors = true
+table_width = 120
+
+[rules]
+# Auto-download latest rules
+auto_download = true
+
+[docker]
+# Balanced timeout for most environments
+timeout = 30
+
+# Moderate parallelism
+max_parallel = 10

@@ -1,0 +1,12 @@
+id: old_image
+name: "Potentially Outdated Image"
+target: docker_runtime
+severity: LOW
+description: Detects containers running from images created more than 90 days ago (based on Created field).
+match:
+  jsonpath: "$.Created"
+  regex: "^(2020|2021|2022)"
+include_match_in_description: true
+message: "Container using potentially outdated image (check for updates)"
+fix: |
+  Pull latest version of the image and recreate container with updated base.

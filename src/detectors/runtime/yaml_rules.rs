@@ -52,33 +52,56 @@ pub struct YamlRuleEngine {
 }
 
 impl YamlRuleEngine {
+    /// Returns a reference to all loaded rules.
     pub fn rules(&self) -> &Vec<YamlRule> {
         &self.rules
     }
-    // ------------ Rule Loader --------------------------------------
+
+    /// Loads YAML rules from a directory structure.
+    ///
+    /// Expects rules to be in `{base}/docker/*.yaml` files.
+    ///
+    /// # Arguments
+    ///
+    /// * `base` - Base directory containing rules (will look in `base/docker/`)
+    ///
+    /// # Returns
+    ///
+    /// `Result<YamlRuleEngine>` with loaded rules, or error if directory read/parse fails
     pub fn from_dir(base: &Path) -> Result<Self> {
     let dir = base.join("docker");
 
     let mut rules = Vec::new();
     if dir.exists() {
-        for entry in fs::read_dir(&dir)? {
-            let path = entry?.path();
+        for entry in fs::read_dir(&dir)
+            .with_context(|| format!("Failed to read directory {}", dir.display()))? {
+            let path = entry
+                .with_context(|| format!("Failed to read directory entry in {}", dir.display()))?
+                .path();
             if path.extension().and_then(|e| e.to_str()) == Some("yaml") {
                 let contents = fs::read_to_string(&path)
                     .with_context(|| format!("reading {}", path.display()))?;
-                let rule: YamlRule = serde_yaml::from_str(&contents)
+                let rule: YamlRule = serde_yml::from_str(&contents)
                     .with_context(|| format!("parsing {}", path.display()))?;
                 rules.push(rule);
             }
         }
     }
-    println!("Loaded {} YAML rules from {}", rules.len(), dir.display());
+    tracing::info!("Loaded {} YAML rules from {}", rules.len(), dir.display());
     Ok(Self { rules })
 }
 
 
 
-    // ------------ Public API ------------------------------------------
+    /// Scans a JSON value against all loaded rules.
+    ///
+    /// # Arguments
+    ///
+    /// * `value` - JSON representation of the object to scan (e.g., Docker container inspect response)
+    ///
+    /// # Returns
+    ///
+    /// Vector of findings from rules that matched
     pub fn scan_value(&self, value: &Value) -> Vec<Finding> {
         self.rules
             .iter()
@@ -176,9 +199,15 @@ impl YamlRuleEngine {
 fn matcher_matches(value: &str, matcher: &RuleMatcher) -> bool {
     match (&matcher.equals, &matcher.regex) {
         (Some(expected), _) => value == expected,
-        (None, Some(pattern)) => Regex::new(pattern)
-            .map(|re| re.is_match(value))
-            .unwrap_or(false),
+        (None, Some(pattern)) => {
+            match Regex::new(pattern) {
+                Ok(re) => re.is_match(value),
+                Err(e) => {
+                    tracing::warn!("Invalid regex pattern '{}': {}", pattern, e);
+                    false
+                }
+            }
+        }
         _ => true,
     }
 }
@@ -201,6 +230,7 @@ fn to_finding(rule: &YamlRule, mv: &str, risk: RiskLevel) -> Finding {
         kind: rule.id.clone(),
         description: desc,
         risk,
+        line: None,
     }
 }
 
